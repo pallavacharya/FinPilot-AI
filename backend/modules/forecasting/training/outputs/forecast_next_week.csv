@@ -1,0 +1,18 @@
+sub_category,week_ending,predicted_sales,lower_estimate,upper_estimate,category
+Accessories,2019-01-06,1068.68,116.13,2009.95,Technology
+Appliances,2019-01-06,848.12,98.94,1612.06,Office Supplies
+Art,2019-01-06,122.39,0.0,280.77,Office Supplies
+Binders,2019-01-06,1054.08,0.0,3021.49,Office Supplies
+Bookcases,2019-01-06,1052.71,0.0,2136.41,Furniture
+Chairs,2019-01-06,1749.51,0.0,3581.42,Furniture
+Copiers,2019-01-06,1316.96,0.0,3992.23,Technology
+Envelopes,2018-12-30,72.08,0.0,206.9,Office Supplies
+Fasteners,2019-01-06,23.67,4.93,44.63,Office Supplies
+Furnishings,2019-01-06,649.2,122.09,1156.18,Furniture
+Labels,2019-01-06,63.36,0.0,201.8,Office Supplies
+Machines,2019-01-06,659.31,0.0,3886.25,Technology
+Paper,2019-01-06,471.35,121.68,823.13,Office Supplies
+Phones,2019-01-06,1249.15,0.0,2765.46,Technology
+Storage,2019-01-06,1093.68,0.0,2251.08,Office Supplies
+Supplies,2019-01-06,476.32,0.0,1570.4,Office Supplies
+Tables,2019-01-06,932.57,0.0,2203.83,Furniture

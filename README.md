@@ -44,28 +44,30 @@ Open http://localhost:3000 — API docs at http://127.0.0.1:8000/docs
 ## Configuration (`.env`, see `.env.example`)
 `JWT_SECRET`, `CORS_ORIGINS`, `NEXT_PUBLIC_API_URL`. Never commit a real `.env`.
 
-## How the other modules plug in
-Each module has ONE stub file in `backend/modules/` with the exact function name and return shape the dashboard expects.
-Replace the body of the function(s) with the real model — do not rename functions or change the returned keys.
+## Module Integration Status
 
-| Module | Owner | File to edit | Function(s) | Must return |
+| Module | Owner | Status | Backend Location | Details |
 |---|---|---|---|---|
-| Sales forecasting | G Yaswanth Sai | `backend/modules/forecasting/__init__.py` | `get_forecast(horizon_days)` | `horizon_days, mape, rmse, actual[], forecast[], next_30d_total_inr` |
-| Fraud detection | Kritagy Kaushik | `backend/modules/fraud/__init__.py` | `get_flagged_transactions()` | `total_scanned, transactions[{id, amount, customer, risk_score, status}]` |
-| RAG / documents | Pallav Acharya | `backend/modules/documents/__init__.py` | `index_document(filename, content)`, `ask(question)` | `ask` -> `{answer, sources[]}` |
-| AI agent | Akshi Yadav | `backend/modules/agent/__init__.py` | `get_actions()`, `approve_action(action_id, approved_by)` | actions `[{id, title, body, status}]` |
+| **Sales Forecasting** | **G Yaswanth Sai** | **COMPLETE** | `backend/modules/forecasting/` | 17 Prophet models trained & backtested (RMSE 1,708, WAPE 70.4%). Fixed-seed precomputed bundle (`forecast_bundle.json`) with zero extra runtime dependencies. Full API (`/categories`, `/next-week`, `/predict`, `/chart`, `/summary`) & Next.js "Product forecast" tab integrated. |
+| Fraud detection | Kritagy Kaushik | Awaiting deliverable | `backend/modules/fraud/__init__.py` | Stubbed with sample data; awaiting Isolation Forest + XGBoost classifier on Kaggle fraud dataset. |
+| RAG / documents | Pallav Acharya | Awaiting deliverable | `backend/modules/documents/__init__.py` | Stubbed with sample data; awaiting document chunking, embeddings, ChromaDB, and Claude API retrieval. |
+| AI agent | Akshi Yadav | Awaiting deliverable | `backend/modules/agent/__init__.py` | Stubbed with sample data; awaiting LangGraph decision loop, action tools, and human approval flow. |
 
 See `TEAM_INTEGRATION_GUIDE.docx` for the full per-person instructions.
 
 ## Project layout
-    backend/    FastAPI app (app/main.py, app/auth_utils.py = JWT + RBAC, app/routers/*)
-    backend/modules/   one folder per teammate module (forecasting, fraud, documents, agent)
-    frontend/   Next.js pages router (pages/, lib/api.js = API client, styles/)
+    backend/                   FastAPI app (app/main.py, app/auth_utils.py = JWT + RBAC, app/routers/*)
+    backend/modules/           Module implementations:
+      forecasting/             [DONE] Real Prophet bundle, runtime reader, and training/ folder
+      fraud/                   [STUB] Fraud detection module
+      documents/               [STUB] Document retrieval / RAG module
+      agent/                   [STUB] LangGraph agent module
+    frontend/                  Next.js pages router (pages/, components/, lib/api.js, styles/)
+      components/              ProductForecastChart (SVG), ProductForecastTab
     docker-compose.yml, start.bat, stop.bat
 
-## Status / known limitations
-- Done: login, JWT, RBAC enforced server-side, all four routes, dashboard, chat UI, Docker files.
-- Stubbed: each module in `backend/modules/` returns sample data until its real model is wired in.
-- No database yet: fraud reviews and agent approvals are held in memory and reset when the backend restarts.
-- Demo users are hardcoded with plain-text passwords in `routers/auth.py` — replace with a database and hashed passwords (or Supabase/Clerk) before any real deployment.
-- Not yet deployed.
+## Status / Current State
+- **Infra & Auth**: Login, JWT authentication, RBAC enforced server-side, Docker configurations, unified `start.bat` / `stop.bat`.
+- **Sales Forecasting (Yaswanth)**: 100% finished, tested, and integrated end-to-end (backend API + frontend SVG chart, search, dropdowns, table, overview KPI & top 8 cards).
+- **Pending Teammates**: Fraud detection, Document Q&A, and Agent activity remain cleanly stubbed with their defined contracts, ready to plug in as soon as Kaushik, Pallav, and Akshi provide their code.
+- **No Database Yet**: In-memory state for dev sessions; demo users in `routers/auth.py`.

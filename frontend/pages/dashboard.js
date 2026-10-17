@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
+import ProductForecastTab from "../components/ProductForecastTab";
 import {
   getSession,
   logout,
-  getForecast,
+  getForecastSummary,
+  getForecastNextWeek,
   getFlaggedTransactions,
   reviewTransaction,
   askDocuments,
@@ -11,48 +13,13 @@ import {
   approveAction,
 } from "../lib/api";
 
-function ForecastChart({ actual, forecast }) {
-  if (!actual || !forecast) return null;
-  const W = 600, H = 190, pad = 10;
-  const all = actual.concat(forecast);
-  const max = Math.max(...all), min = Math.min(...all);
-  const totalPts = actual.length + forecast.length - 1;
-  const xStep = (W - 2 * pad) / totalPts;
-  const y = (v) => H - pad - ((v - min) / (max - min)) * (H - 2 * pad);
-
-  const actualPath = actual.map((v, i) => `${i === 0 ? "M" : "L"}${pad + i * xStep},${y(v)}`).join(" ");
-  const forecastPath = forecast
-    .map((v, i) => `${i === 0 ? "M" : "L"}${pad + (actual.length - 1 + i) * xStep},${y(v)}`)
-    .join(" ");
-
-  const bandTop = forecast.map((v, i) => [pad + (actual.length - 1 + i) * xStep, y(v + 4)]);
-  const bandBot = forecast.map((v, i) => [pad + (actual.length - 1 + i) * xStep, y(v - 4)]).reverse();
-  const bandPath = `M${bandTop.map((p) => p.join(",")).join(" L")} L${bandBot.map((p) => p.join(",")).join(" L")} Z`;
-
-  return (
-    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: 190, display: "block" }}>
-      <path d={bandPath} fill="#2A3242" opacity="0.5" />
-      <path d={actualPath} fill="none" stroke="#5D6578" strokeWidth="2" />
-      <path d={forecastPath} fill="none" stroke="#3ECF8E" strokeWidth="2.5" />
-      <line
-        x1={pad + (actual.length - 1) * xStep}
-        y1="0"
-        x2={pad + (actual.length - 1) * xStep}
-        y2={H}
-        stroke="#2A3242"
-        strokeWidth="1"
-        strokeDasharray="3,3"
-      />
-    </svg>
-  );
-}
-
 export default function Dashboard() {
   const router = useRouter();
   const [session, setSession] = useState(null);
   const [tab, setTab] = useState("overview");
 
-  const [forecast, setForecast] = useState(null);
+  const [summary, setSummary] = useState(null);
+  const [nextWeekItems, setNextWeekItems] = useState([]);
   const [fraud, setFraud] = useState(null);
   const [actions, setActions] = useState(null);
 
@@ -69,7 +36,8 @@ export default function Dashboard() {
       return;
     }
     setSession(s);
-    getForecast(15).then(setForecast).catch(() => {});
+    getForecastSummary().then(setSummary).catch(() => {});
+    getForecastNextWeek().then((res) => setNextWeekItems(res.items || [])).catch(() => {});
     getFlaggedTransactions().then(setFraud).catch(() => {});
     getAgentActions().then(setActions).catch(() => {});
   }, []);
@@ -114,6 +82,11 @@ export default function Dashboard() {
   const pendingCount = flagged.filter((t) => t.status === "pending").length;
   const pendingActions = (actions?.actions ?? []).filter((a) => a.status !== "executed").length;
 
+  const top8Items = [...nextWeekItems]
+    .sort((a, b) => b.predicted_sales - a.predicted_sales)
+    .slice(0, 8);
+  const maxTop8 = top8Items.length > 0 ? top8Items[0].predicted_sales : 1;
+
   return (
     <div className="shell">
       <nav>
@@ -123,6 +96,9 @@ export default function Dashboard() {
         </div>
         <button className={`navitem ${tab === "overview" ? "active" : ""}`} onClick={() => setTab("overview")}>
           <span className="navlabel">Overview</span>
+        </button>
+        <button className={`navitem ${tab === "forecast" ? "active" : ""}`} onClick={() => setTab("forecast")}>
+          <span className="navlabel">Product forecast</span>
         </button>
         <button className={`navitem ${tab === "fraud" ? "active" : ""}`} onClick={() => setTab("fraud")}>
           <span className="navlabel">Fraud alerts</span>
@@ -152,29 +128,33 @@ export default function Dashboard() {
             <div className="topbar">
               <div>
                 <h2>Overview</h2>
-                <div className="sub">Aarav Retail Co. \u00b7 live from FastAPI</div>
+                <div className="sub">Autonomous Financial Analyst · live from FastAPI</div>
               </div>
               <span className="pill">
-                <span className="dot pulse"></span>FastAPI live \u00b7 /api/v1
+                <span className="dot pulse"></span>FastAPI live · /api/v1
               </span>
             </div>
 
             <div className="kpirow">
               <div className="kpi">
-                <div className="klabel">Next 30d forecast</div>
+                <div className="klabel">Next 4 weeks forecast</div>
                 <div className="kval up">
-                  {forecast ? `\u20b9${(forecast.next_30d_total_inr / 100000).toFixed(1)}L` : "\u2026"}
+                  {summary ? `$${(summary.next_4_weeks_total / 1000).toFixed(1)}K` : "…"}
                 </div>
-                <div className="kdelta">{forecast ? `MAPE ${forecast.mape}% \u00b7 RMSE ${forecast.rmse}` : "loading"}</div>
+                <div className="kdelta">
+                  {summary?.metrics
+                    ? `WAPE ${Math.round(summary.metrics.wape_pct)}% · RMSE ${Math.round(summary.metrics.rmse).toLocaleString("en-US")}`
+                    : "loading"}
+                </div>
               </div>
               <div className="kpi">
                 <div className="klabel">Flagged transactions</div>
-                <div className="kval warn">{fraud ? pendingCount : "\u2026"}</div>
+                <div className="kval warn">{fraud ? pendingCount : "…"}</div>
                 <div className="kdelta">awaiting review</div>
               </div>
               <div className="kpi">
                 <div className="klabel">Agent actions pending</div>
-                <div className="kval">{actions ? pendingActions : "\u2026"}</div>
+                <div className="kval">{actions ? pendingActions : "…"}</div>
                 <div className="kdelta">gated on human approval</div>
               </div>
               <div className="kpi">
@@ -186,41 +166,73 @@ export default function Dashboard() {
 
             <div className="grid">
               <div className="card">
-                <h3>Sales forecast \u2014 next {forecast?.horizon_days ?? "\u2026"} days</h3>
-                <div className="cardsub">Prophet + XGBoost ensemble \u00b7 served from /api/v1/forecast</div>
-                {forecast ? (
-                  <ForecastChart actual={forecast.actual} forecast={forecast.forecast} />
-                ) : (
-                  <div className="loading">Loading forecast\u2026</div>
-                )}
-                <div style={{ display: "flex", gap: 16, marginTop: 10, fontSize: 11.5, color: "var(--muted)" }}>
-                  <span><i style={{ width: 9, height: 9, background: "#5D6578", display: "inline-block", marginRight: 6, borderRadius: 2 }}></i>Actual</span>
-                  <span><i style={{ width: 9, height: 9, background: "#3ECF8E", display: "inline-block", marginRight: 6, borderRadius: 2 }}></i>Forecast</span>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
+                  <div>
+                    <h3>Next week by sub-category</h3>
+                    <div className="cardsub" style={{ marginBottom: 0 }}>Top 8 products by predicted sales</div>
+                  </div>
+                  <span className="pill" style={{ fontSize: 10.5 }}>Superstore US$</span>
                 </div>
+
+                {nextWeekItems.length === 0 ? (
+                  <div className="loading">Loading forecast…</div>
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 10 }}>
+                    {top8Items.map((item) => {
+                      const pct = Math.max(8, Math.min(100, (item.predicted_sales / maxTop8) * 100));
+                      return (
+                        <div key={item.sub_category}>
+                          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12.5, marginBottom: 4 }}>
+                            <span style={{ fontWeight: 500 }}>{item.sub_category}</span>
+                            <span className="amt" style={{ color: "var(--accent)" }}>
+                              ${Number(item.predicted_sales).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </span>
+                          </div>
+                          <div style={{ height: 6, background: "var(--panel-2)", borderRadius: 3, overflow: "hidden" }}>
+                            <div style={{ width: `${pct}%`, height: "100%", background: "var(--accent)", borderRadius: 3 }}></div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                <button
+                  className="btn ghost"
+                  style={{ marginTop: 16, width: "100%", fontSize: 12.5, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
+                  onClick={() => setTab("forecast")}
+                >
+                  Open product forecast <span>→</span>
+                </button>
               </div>
+
               <div className="card">
                 <h3>System status</h3>
-                <div className="cardsub">Docker Compose \u00b7 Render deployment</div>
+                <div className="cardsub">Docker Compose · Render deployment</div>
                 <table>
                   <tbody>
-                    <tr><td>Frontend (Next.js)</td><td style={{ textAlign: "right", color: "var(--accent)" }}>\u25cf running</td></tr>
-                    <tr><td>API gateway (FastAPI)</td><td style={{ textAlign: "right", color: "var(--accent)" }}>\u25cf running</td></tr>
-                    <tr><td>Forecasting service</td><td style={{ textAlign: "right", color: "var(--accent)" }}>\u25cf running</td></tr>
-                    <tr><td>Fraud detection service</td><td style={{ textAlign: "right", color: "var(--accent)" }}>\u25cf running</td></tr>
-                    <tr><td>RAG / ChromaDB</td><td style={{ textAlign: "right", color: "var(--accent)" }}>\u25cf running</td></tr>
-                    <tr><td>Agent layer (LangGraph)</td><td style={{ textAlign: "right", color: "var(--amber)" }}>\u25cf {pendingActions} pending</td></tr>
+                    <tr><td>Frontend (Next.js)</td><td style={{ textAlign: "right", color: "var(--accent)" }}>● running</td></tr>
+                    <tr><td>API gateway (FastAPI)</td><td style={{ textAlign: "right", color: "var(--accent)" }}>● running</td></tr>
+                    <tr><td>Forecasting service</td><td style={{ textAlign: "right", color: "var(--accent)" }}>● running</td></tr>
+                    <tr><td>Fraud detection service</td><td style={{ textAlign: "right", color: "var(--accent)" }}>● running</td></tr>
+                    <tr><td>RAG / ChromaDB</td><td style={{ textAlign: "right", color: "var(--accent)" }}>● running</td></tr>
+                    <tr><td>Agent layer (LangGraph)</td><td style={{ textAlign: "right", color: "var(--amber)" }}>● {pendingActions} pending</td></tr>
                   </tbody>
                 </table>
                 <div className="badge-row">
                   <span className="stackbadge">Next.js</span>
                   <span className="stackbadge">FastAPI</span>
-                  <span className="stackbadge">JWT \u00b7 RBAC</span>
+                  <span className="stackbadge">JWT · RBAC</span>
                   <span className="stackbadge">Docker</span>
                   <span className="stackbadge">Render</span>
                 </div>
               </div>
             </div>
           </div>
+        )}
+
+        {tab === "forecast" && (
+          <ProductForecastTab />
         )}
 
         {tab === "fraud" && (

@@ -41,6 +41,42 @@ export async function getForecast(horizonDays = 30) {
   return res.json();
 }
 
+export async function getForecastCategories() {
+  const res = await fetch(`${API_BASE}/forecast/categories`, { headers: authHeaders() });
+  if (!res.ok) throw new Error("Failed to load forecast categories");
+  return res.json();
+}
+
+export async function getForecastNextWeek() {
+  const res = await fetch(`${API_BASE}/forecast/next-week`, { headers: authHeaders() });
+  if (!res.ok) throw new Error("Failed to load next week forecast");
+  return res.json();
+}
+
+export async function getForecastPredict(item) {
+  const res = await fetch(`${API_BASE}/forecast/predict?item=${encodeURIComponent(item)}`, { headers: authHeaders() });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to predict item");
+  }
+  return res.json();
+}
+
+export async function getForecastChart(item) {
+  const res = await fetch(`${API_BASE}/forecast/chart?item=${encodeURIComponent(item)}`, { headers: authHeaders() });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to load forecast chart");
+  }
+  return res.json();
+}
+
+export async function getForecastSummary() {
+  const res = await fetch(`${API_BASE}/forecast/summary`, { headers: authHeaders() });
+  if (!res.ok) throw new Error("Failed to load forecast summary");
+  return res.json();
+}
+
 export async function getFlaggedTransactions() {
   const res = await fetch(`${API_BASE}/fraud`, { headers: authHeaders() });
   return res.json();

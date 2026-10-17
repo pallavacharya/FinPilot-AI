@@ -27,6 +27,8 @@ a{color:inherit;}
 .field{width:100%;background:var(--panel-2);border:1px solid var(--border);border-radius:9px;
   padding:11px 13px;color:var(--text);font-family:var(--font-ui);font-size:13.5px;outline:none;margin-bottom:14px;}
 .field:focus{border-color:var(--accent);}
+select.field{cursor:pointer;}
+select.field option{background:var(--panel);color:var(--text);}
 .btn{font-family:var(--font-ui);font-size:13px;font-weight:600;padding:11px 16px;border-radius:9px;
   border:1px solid var(--border);background:var(--panel-2);color:var(--text);cursor:pointer;}
 .btn.primary{background:var(--accent);border-color:var(--accent);color:#08120D;width:100%;}
