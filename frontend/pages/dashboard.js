@@ -1,6 +1,8 @@
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/router";
 import ProductForecastTab from "../components/ProductForecastTab";
+import Sidebar from "../components/Sidebar";
+import FraudTab from "../components/FraudTab";
 import {
   getSession,
   logout,
@@ -21,6 +23,7 @@ export default function Dashboard() {
   const router = useRouter();
   const [session, setSession] = useState(null);
   const [tab, setTab] = useState("overview");
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const [summary, setSummary] = useState(null);
   const [nextWeekItems, setNextWeekItems] = useState([]);
@@ -37,7 +40,7 @@ export default function Dashboard() {
   const fileInputRef = useRef(null);
 
   const [chatLog, setChatLog] = useState([
-    { role: "bot", text: "Hi, I'm the FinPilot document assistant. Ask about your invoices and statements \u2014 I'll cite the source." },
+    { role: "bot", text: "Hi, I'm the FinPilot document assistant. Ask about your invoices and statements — I'll cite the source." },
   ]);
   const [chatInput, setChatInput] = useState("");
   const [typing, setTyping] = useState(false);
@@ -55,6 +58,14 @@ export default function Dashboard() {
       return;
     }
     setSession(s);
+    try {
+      const saved = localStorage.getItem("finpilot.sidebar");
+      if (saved !== null) {
+        setSidebarCollapsed(saved === "true");
+      } else if (window.innerWidth < 820) {
+        setSidebarCollapsed(true);
+      }
+    } catch (e) {}
     getForecastSummary().then(setSummary).catch(() => {});
     getForecastNextWeek().then((res) => setNextWeekItems(res.items || [])).catch(() => {});
     getFlaggedTransactions().then(setFraud).catch(() => {});
@@ -151,39 +162,15 @@ export default function Dashboard() {
   );
 
   return (
-    <div className="shell">
-      <nav>
-        <div className="brand">
-          <div className="brand-mark">F</div>
-          <div className="brand-name">FinPilot AI</div>
-        </div>
-        <button className={`navitem ${tab === "overview" ? "active" : ""}`} onClick={() => setTab("overview")}>
-          <span className="navlabel">Overview</span>
-        </button>
-        <button className={`navitem ${tab === "forecast" ? "active" : ""}`} onClick={() => setTab("forecast")}>
-          <span className="navlabel">Product forecast</span>
-        </button>
-        <button className={`navitem ${tab === "fraud" ? "active" : ""}`} onClick={() => setTab("fraud")}>
-          <span className="navlabel">Fraud alerts</span>
-        </button>
-        <button className={`navitem ${tab === "chat" ? "active" : ""}`} onClick={() => setTab("chat")}>
-          <span className="navlabel">Document Q&amp;A</span>
-        </button>
-        <button className={`navitem ${tab === "agent" ? "active" : ""}`} onClick={() => setTab("agent")}>
-          <span className="navlabel">Agent activity</span>
-        </button>
-        <div className="navspacer"></div>
-        <button className="navitem" onClick={handleLogout}>
-          <span className="navlabel">Sign out</span>
-        </button>
-        <div className="userchip">
-          <div className="avatar">{initial}</div>
-          <div>
-            <div className="uname">{session.name}</div>
-            <div className="urole">{session.role}</div>
-          </div>
-        </div>
-      </nav>
+    <div className={`shell ${sidebarCollapsed ? "sidebar-collapsed" : "sidebar-expanded"}`}>
+      <Sidebar
+        tab={tab}
+        setTab={setTab}
+        session={session}
+        onLogout={handleLogout}
+        collapsed={sidebarCollapsed}
+        setCollapsed={setSidebarCollapsed}
+      />
 
       <main>
         {tab === "overview" && (
@@ -212,8 +199,8 @@ export default function Dashboard() {
               </div>
               <div className="kpi">
                 <div className="klabel">Flagged transactions</div>
-                <div className="kval warn">{fraud ? pendingCount : "…"}</div>
-                <div className="kdelta">awaiting review</div>
+                <div className="kval warn">{fraud ? (fraud.count ?? pendingCount) : "…"}</div>
+                <div className="kdelta">suspicious across all uploads</div>
               </div>
               <div className="kpi">
                 <div className="klabel">Agent actions pending</div>
@@ -305,47 +292,12 @@ export default function Dashboard() {
         )}
 
         {tab === "fraud" && (
-          <div>
-            <div className="topbar">
-              <div>
-                <h2>Fraud alerts</h2>
-                <div className="sub">Isolation Forest + XGBoost risk scoring \u00b7 served from /api/v1/fraud</div>
-              </div>
-              <span className="pill">{fraud ? `${flagged.length} scored / ${fraud.total_scanned} scanned` : "\u2026"}</span>
-            </div>
-            <div className="card">
-              {!fraud ? (
-                <div className="loading">Loading transactions\u2026</div>
-              ) : (
-                <table>
-                  <thead>
-                    <tr><th>Transaction</th><th>Amount</th><th>Customer</th><th>Risk score</th><th>Status</th><th></th></tr>
-                  </thead>
-                  <tbody>
-                    {flagged.map((t) => {
-                      const level = t.risk_score >= 0.8 ? "high" : t.risk_score >= 0.4 ? "med" : "low";
-                      return (
-                        <tr key={t.id}>
-                          <td className="amt">{t.id}</td>
-                          <td className="amt">\u20b9{t.amount.toLocaleString("en-IN")}</td>
-                          <td>{t.customer}</td>
-                          <td><span className={`risk ${level}`}>{t.risk_score.toFixed(2)}</span></td>
-                          <td style={{ textTransform: "capitalize" }}>{t.status}</td>
-                          <td>
-                            {t.status === "pending" && (
-                              <button className="btn ghost" style={{ padding: "5px 10px", fontSize: 11.5 }} onClick={() => handleReview(t.id, "clear")}>
-                                Clear
-                              </button>
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              )}
-            </div>
-          </div>
+          <FraudTab
+            session={session}
+            onHistoryChange={() => {
+              getFlaggedTransactions().then(setFraud).catch(() => {});
+            }}
+          />
         )}
 
         {tab === "chat" && (
@@ -519,12 +471,12 @@ export default function Dashboard() {
             <div className="topbar">
               <div>
                 <h2>Agent activity</h2>
-                <div className="sub">LangGraph decision loop \u00b7 served from /api/v1/agent</div>
+                <div className="sub">LangGraph decision loop · served from /api/v1/agent</div>
               </div>
               <span className="pill">Audit trail: 100% coverage</span>
             </div>
             {!actions ? (
-              <div className="loading">Loading agent actions\u2026</div>
+              <div className="loading">Loading agent actions…</div>
             ) : (
               actions.actions.map((a) => (
                 <div key={a.id} className={`agentcard ${a.status === "executed" ? "approved" : ""}`}>
@@ -541,7 +493,7 @@ export default function Dashboard() {
                       </button>
                     )}
                   </div>
-                  <div className="audit">audit_id: {a.id} \u00b7 actor: agent.langgraph \u00b7 gate: human_approval_required</div>
+                  <div className="audit">audit_id: {a.id} · actor: agent.langgraph · gate: human_approval_required</div>
                 </div>
               ))
             )}

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <defs>
+    <linearGradient id="fpGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3ECF8E" />
+      <stop offset="100%" stop-color="#2A9D6F" />
+    </linearGradient>
+  </defs>
+  <rect width="32" height="32" rx="8" fill="url(#fpGrad)" />
+  <!-- Rising 3-point chart line (the contrail / tail) -->
+  <polyline points="7,23.5 11.5,20.5 15.5,17.5" stroke="#08120D" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+  <circle cx="7" cy="23.5" r="1.2" fill="#08120D" />
+  <circle cx="11.5" cy="20.5" r="1.2" fill="#08120D" />
+  <!-- Paper-plane / navigation arrow (pilot) pointing up-right -->
+  <polygon points="25,7 10,15.5 15.5,17.5 17.5,23" fill="#08120D" />
+  <!-- Fold shading on right wing -->
+  <polygon points="25,7 15.5,17.5 17.5,23" fill="#050C09" opacity="0.25" />
+</svg>

@@ -91,6 +91,43 @@ export async function reviewTransaction(transactionId, decision) {
   return res.json();
 }
 
+export async function uploadFraudCsv(file) {
+  const formData = new FormData();
+  formData.append("file", file);
+  const res = await fetch(`${API_BASE}/fraud/upload`, {
+    method: "POST",
+    headers: authHeaders(),
+    body: formData,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to upload and score CSV");
+  }
+  return res.json();
+}
+
+export async function getFraudHistory() {
+  const res = await fetch(`${API_BASE}/fraud/history`, { headers: authHeaders() });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to load fraud history");
+  }
+  return res.json();
+}
+
+export async function clearFraudHistory() {
+  const res = await fetch(`${API_BASE}/fraud/history`, {
+    method: "DELETE",
+    headers: authHeaders(),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to clear fraud history");
+  }
+  return res.json();
+}
+
+
 export async function askDocuments(question) {
   const res = await fetch(`${API_BASE}/documents/ask`, {
     method: "POST",

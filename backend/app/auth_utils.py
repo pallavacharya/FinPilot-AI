@@ -16,8 +16,8 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
 # role -> which resources it can touch (used by routers below)
 ROLE_PERMISSIONS = {
-    "owner": {"forecast:read", "fraud:read", "fraud:approve", "documents:read", "agent:approve"},
-    "analyst": {"forecast:read", "fraud:read", "documents:read", "agent:approve"},
+    "owner": {"forecast:read", "fraud:read", "fraud:upload", "fraud:approve", "documents:read", "agent:approve"},
+    "analyst": {"forecast:read", "fraud:read", "fraud:upload", "documents:read", "agent:approve"},
     "viewer": {"forecast:read", "documents:read"},
 }
 

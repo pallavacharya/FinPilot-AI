@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useRouter } from "next/router";
 import { login } from "../lib/api";
+import Logo from "../components/Logo";
 
 export default function Login() {
   const [email, setEmail] = useState("owner@aaravretail.com");
@@ -37,8 +38,7 @@ export default function Login() {
     <div className="login-shell">
       <div className="login-card">
         <div className="brand">
-          <div className="brand-mark">F</div>
-          <div className="brand-name">FinPilot AI</div>
+          <Logo />
         </div>
         <h1>Sign in</h1>
         <p className="sub">Role-based access — enforced by the FastAPI backend via JWT.</p>

@@ -1,0 +1,304 @@
+[
+  {
+    "id": 1,
+    "question": "What is the total amount of invoice INV-1042?",
+    "expected_sources": [
+      "sample_invoice.pdf"
+    ],
+    "retrieved_sources": [
+      "sample_invoice.pdf"
+    ],
+    "best_similarity": 0.266,
+    "pass": true
+  },
+  {
+    "id": 2,
+    "question": "Who is the supplier on invoice INV-1042?",
+    "expected_sources": [
+      "sample_invoice.pdf"
+    ],
+    "retrieved_sources": [
+      "sample_invoice.pdf"
+    ],
+    "best_similarity": 0.263,
+    "pass": true
+  },
+  {
+    "id": 3,
+    "question": "When was invoice INV-1042 issued?",
+    "expected_sources": [
+      "sample_invoice.pdf"
+    ],
+    "retrieved_sources": [
+      "sample_invoice.pdf"
+    ],
+    "best_similarity": 0.229,
+    "pass": true
+  },
+  {
+    "id": 4,
+    "question": "What is the payment due date for invoice INV-1042?",
+    "expected_sources": [
+      "sample_invoice.pdf"
+    ],
+    "retrieved_sources": [
+      "sample_invoice.pdf"
+    ],
+    "best_similarity": 0.331,
+    "pass": true
+  },
+  {
+    "id": 5,
+    "question": "How many corrugated shipping boxes were purchased?",
+    "expected_sources": [
+      "sample_invoice.pdf"
+    ],
+    "retrieved_sources": [
+      "sample_invoice.pdf"
+    ],
+    "best_similarity": 0.249,
+    "pass": true
+  },
+  {
+    "id": 6,
+    "question": "What is the unit price of each shipping box?",
+    "expected_sources": [
+      "sample_invoice.pdf"
+    ],
+    "retrieved_sources": [
+      "sample_invoice.pdf",
+      "sample_invoice_2.pdf"
+    ],
+    "best_similarity": 0.177,
+    "pass": true
+  },
+  {
+    "id": 7,
+    "question": "What is the subtotal of invoice INV-1042 before tax?",
+    "expected_sources": [
+      "sample_invoice.pdf"
+    ],
+    "retrieved_sources": [
+      "sample_invoice.pdf"
+    ],
+    "best_similarity": 0.254,
+    "pass": true
+  },
+  {
+    "id": 8,
+    "question": "How much tax is charged on invoice INV-1042?",
+    "expected_sources": [
+      "sample_invoice.pdf"
+    ],
+    "retrieved_sources": [
+      "sample_invoice.pdf"
+    ],
+    "best_similarity": 0.242,
+    "pass": true
+  },
+  {
+    "id": 9,
+    "question": "What are the payment terms for GreenLeaf Packaging Supplies?",
+    "expected_sources": [
+      "sample_invoice.pdf"
+    ],
+    "retrieved_sources": [
+      "sample_invoice.pdf"
+    ],
+    "best_similarity": 0.3,
+    "pass": true
+  },
+  {
+    "id": 10,
+    "question": "Which product was purchased from GreenLeaf Packaging Supplies?",
+    "expected_sources": [
+      "sample_invoice.pdf"
+    ],
+    "retrieved_sources": [
+      "sample_invoice.pdf"
+    ],
+    "best_similarity": 0.249,
+    "pass": true
+  },
+  {
+    "id": 11,
+    "question": "What is the total amount of invoice INV-2055?",
+    "expected_sources": [
+      "sample_invoice_2.pdf"
+    ],
+    "retrieved_sources": [
+      "sample_invoice_2.pdf"
+    ],
+    "best_similarity": 0.265,
+    "pass": true
+  },
+  {
+    "id": 12,
+    "question": "Who supplied the office notebooks?",
+    "expected_sources": [
+      "sample_invoice_2.pdf"
+    ],
+    "retrieved_sources": [
+      "sample_invoice_2.pdf"
+    ],
+    "best_similarity": 0.263,
+    "pass": true
+  },
+  {
+    "id": 13,
+    "question": "When was invoice INV-2055 issued?",
+    "expected_sources": [
+      "sample_invoice_2.pdf"
+    ],
+    "retrieved_sources": [
+      "sample_invoice_2.pdf"
+    ],
+    "best_similarity": 0.228,
+    "pass": true
+  },
+  {
+    "id": 14,
+    "question": "What is the payment due date for BlueSky Office Supplies?",
+    "expected_sources": [
+      "sample_invoice_2.pdf"
+    ],
+    "retrieved_sources": [
+      "sample_invoice_2.pdf"
+    ],
+    "best_similarity": 0.42,
+    "pass": true
+  },
+  {
+    "id": 15,
+    "question": "How many office notebooks were purchased?",
+    "expected_sources": [
+      "sample_invoice_2.pdf"
+    ],
+    "retrieved_sources": [
+      "sample_invoice_2.pdf"
+    ],
+    "best_similarity": 0.263,
+    "pass": true
+  },
+  {
+    "id": 16,
+    "question": "What is the price of one office notebook?",
+    "expected_sources": [
+      "sample_invoice_2.pdf"
+    ],
+    "retrieved_sources": [
+      "sample_invoice_2.pdf"
+    ],
+    "best_similarity": 0.235,
+    "pass": true
+  },
+  {
+    "id": 17,
+    "question": "What is the subtotal of invoice INV-2055 before tax?",
+    "expected_sources": [
+      "sample_invoice_2.pdf"
+    ],
+    "retrieved_sources": [
+      "sample_invoice_2.pdf"
+    ],
+    "best_similarity": 0.253,
+    "pass": true
+  },
+  {
+    "id": 18,
+    "question": "What tax amount is charged on invoice INV-2055?",
+    "expected_sources": [
+      "sample_invoice_2.pdf"
+    ],
+    "retrieved_sources": [
+      "sample_invoice_2.pdf"
+    ],
+    "best_similarity": 0.253,
+    "pass": true
+  },
+  {
+    "id": 19,
+    "question": "What are the payment terms on invoice INV-2055?",
+    "expected_sources": [
+      "sample_invoice_2.pdf"
+    ],
+    "retrieved_sources": [
+      "sample_invoice_2.pdf"
+    ],
+    "best_similarity": 0.283,
+    "pass": true
+  },
+  {
+    "id": 20,
+    "question": "Which product was purchased from BlueSky Office Supplies?",
+    "expected_sources": [
+      "sample_invoice_2.pdf"
+    ],
+    "retrieved_sources": [
+      "sample_invoice_2.pdf"
+    ],
+    "best_similarity": 0.355,
+    "pass": true
+  },
+  {
+    "id": 21,
+    "question": "Which invoice has the higher total amount?",
+    "expected_sources": [
+      "sample_invoice.pdf",
+      "sample_invoice_2.pdf"
+    ],
+    "retrieved_sources": [
+      "sample_invoice.pdf",
+      "sample_invoice_2.pdf"
+    ],
+    "best_similarity": 0.202,
+    "pass": true
+  },
+  {
+    "id": 22,
+    "question": "What is the combined total of invoices INV-1042 and INV-2055?",
+    "expected_sources": [
+      "sample_invoice.pdf",
+      "sample_invoice_2.pdf"
+    ],
+    "retrieved_sources": [
+      "sample_invoice.pdf",
+      "sample_invoice_2.pdf"
+    ],
+    "best_similarity": 0.153,
+    "pass": true
+  },
+  {
+    "id": 23,
+    "question": "When is the GreenLeaf invoice due?",
+    "expected_sources": [
+      "sample_invoice.pdf"
+    ],
+    "retrieved_sources": [
+      "sample_invoice.pdf",
+      "sample_invoice_2.pdf"
+    ],
+    "best_similarity": 0.202,
+    "pass": true
+  },
+  {
+    "id": 24,
+    "question": "Which company supplied the corrugated shipping boxes?",
+    "expected_sources": [
+      "sample_invoice.pdf"
+    ],
+    "retrieved_sources": [
+      "sample_invoice.pdf"
+    ],
+    "best_similarity": 0.249,
+    "pass": true
+  },
+  {
+    "id": 25,
+    "question": "What is the company's bank account number?",
+    "expected_sources": [],
+    "retrieved_sources": [],
+    "best_similarity": 0.079,
+    "pass": true
+  }
+]

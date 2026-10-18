@@ -1,0 +1,153 @@
+
+[
+  {
+    "id": 1,
+    "question": "What is the total amount of invoice INV-1042?",
+    "expected_answer": "INR 29,500",
+    "expected_sources": ["sample_invoice.pdf"]
+  },
+  {
+    "id": 2,
+    "question": "Who is the supplier on invoice INV-1042?",
+    "expected_answer": "GreenLeaf Packaging Supplies",
+    "expected_sources": ["sample_invoice.pdf"]
+  },
+  {
+    "id": 3,
+    "question": "When was invoice INV-1042 issued?",
+    "expected_answer": "17 October 2026",
+    "expected_sources": ["sample_invoice.pdf"]
+  },
+  {
+    "id": 4,
+    "question": "What is the payment due date for invoice INV-1042?",
+    "expected_answer": "16 November 2026",
+    "expected_sources": ["sample_invoice.pdf"]
+  },
+  {
+    "id": 5,
+    "question": "How many corrugated shipping boxes were purchased?",
+    "expected_answer": "500",
+    "expected_sources": ["sample_invoice.pdf"]
+  },
+  {
+    "id": 6,
+    "question": "What is the unit price of each shipping box?",
+    "expected_answer": "INR 50",
+    "expected_sources": ["sample_invoice.pdf"]
+  },
+  {
+    "id": 7,
+    "question": "What is the subtotal of invoice INV-1042 before tax?",
+    "expected_answer": "INR 25,000",
+    "expected_sources": ["sample_invoice.pdf"]
+  },
+  {
+    "id": 8,
+    "question": "How much tax is charged on invoice INV-1042?",
+    "expected_answer": "INR 4,500",
+    "expected_sources": ["sample_invoice.pdf"]
+  },
+  {
+    "id": 9,
+    "question": "What are the payment terms for GreenLeaf Packaging Supplies?",
+    "expected_answer": "Net 30 days",
+    "expected_sources": ["sample_invoice.pdf"]
+  },
+  {
+    "id": 10,
+    "question": "Which product was purchased from GreenLeaf Packaging Supplies?",
+    "expected_answer": "Corrugated shipping boxes",
+    "expected_sources": ["sample_invoice.pdf"]
+  },
+  {
+    "id": 11,
+    "question": "What is the total amount of invoice INV-2055?",
+    "expected_answer": "INR 18,880",
+    "expected_sources": ["sample_invoice_2.pdf"]
+  },
+  {
+    "id": 12,
+    "question": "Who supplied the office notebooks?",
+    "expected_answer": "BlueSky Office Supplies",
+    "expected_sources": ["sample_invoice_2.pdf"]
+  },
+  {
+    "id": 13,
+    "question": "When was invoice INV-2055 issued?",
+    "expected_answer": "18 October 2026",
+    "expected_sources": ["sample_invoice_2.pdf"]
+  },
+  {
+    "id": 14,
+    "question": "What is the payment due date for BlueSky Office Supplies?",
+    "expected_answer": "17 November 2026",
+    "expected_sources": ["sample_invoice_2.pdf"]
+  },
+  {
+    "id": 15,
+    "question": "How many office notebooks were purchased?",
+    "expected_answer": "200",
+    "expected_sources": ["sample_invoice_2.pdf"]
+  },
+  {
+    "id": 16,
+    "question": "What is the price of one office notebook?",
+    "expected_answer": "INR 80",
+    "expected_sources": ["sample_invoice_2.pdf"]
+  },
+  {
+    "id": 17,
+    "question": "What is the subtotal of invoice INV-2055 before tax?",
+    "expected_answer": "INR 16,000",
+    "expected_sources": ["sample_invoice_2.pdf"]
+  },
+  {
+    "id": 18,
+    "question": "What tax amount is charged on invoice INV-2055?",
+    "expected_answer": "INR 2,880",
+    "expected_sources": ["sample_invoice_2.pdf"]
+  },
+  {
+    "id": 19,
+    "question": "What are the payment terms on invoice INV-2055?",
+    "expected_answer": "Net 30 days",
+    "expected_sources": ["sample_invoice_2.pdf"]
+  },
+  {
+    "id": 20,
+    "question": "Which product was purchased from BlueSky Office Supplies?",
+    "expected_answer": "Office notebooks",
+    "expected_sources": ["sample_invoice_2.pdf"]
+  },
+  {
+    "id": 21,
+    "question": "Which invoice has the higher total amount?",
+    "expected_answer": "INV-1042, with a total of INR 29,500",
+    "expected_sources": ["sample_invoice.pdf", "sample_invoice_2.pdf"]
+  },
+  {
+    "id": 22,
+    "question": "What is the combined total of invoices INV-1042 and INV-2055?",
+    "expected_answer": "INR 48,380",
+    "expected_sources": ["sample_invoice.pdf", "sample_invoice_2.pdf"]
+  },
+  {
+    "id": 23,
+    "question": "When is the GreenLeaf invoice due?",
+    "expected_answer": "16 November 2026",
+    "expected_sources": ["sample_invoice.pdf"]
+  },
+  {
+    "id": 24,
+    "question": "Which company supplied the corrugated shipping boxes?",
+    "expected_answer": "GreenLeaf Packaging Supplies",
+    "expected_sources": ["sample_invoice.pdf"]
+  },
+  {
+    "id": 25,
+    "question": "What is the company's bank account number?",
+    "expected_answer": "The indexed documents do not provide this information.",
+    "expected_sources": []
+  }
+]
