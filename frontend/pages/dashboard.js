@@ -11,6 +11,7 @@ import {
   askDocuments,
   uploadDocument,
   listDocuments,
+  deleteDocument,
   getDocumentEvalSummary,
   getAgentActions,
   approveAction,
@@ -29,6 +30,7 @@ export default function Dashboard() {
   const [documents, setDocuments] = useState([]);
   const [evalSummary, setEvalSummary] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [deletingFile, setDeletingFile] = useState(null);
   const [uploadSuccess, setUploadSuccess] = useState(null);
   const [uploadError, setUploadError] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -98,6 +100,22 @@ export default function Dashboard() {
       setUploading(false);
     }
   }
+
+  async function handleDeleteDocument(filename) {
+    if (deletingFile) return;
+    setDeletingFile(filename);
+    setUploadError(null);
+    setUploadSuccess(null);
+    try {
+      await deleteDocument(filename);
+      loadDocuments();
+    } catch (err) {
+      setUploadError(err.message || "Failed to delete document");
+    } finally {
+      setDeletingFile(null);
+    }
+  }
+
 
   function sendChat(text) {
     const q = (text ?? chatInput).trim();
@@ -417,6 +435,15 @@ export default function Dashboard() {
                               {d.pages} {d.pages === 1 ? "page" : "pages"} · {d.chunks} {d.chunks === 1 ? "chunk" : "chunks"}
                             </div>
                           </div>
+                          <button
+                            type="button"
+                            className="doc-del-btn"
+                            title={`Remove ${d.filename}`}
+                            disabled={deletingFile === d.filename}
+                            onClick={() => handleDeleteDocument(d.filename)}
+                          >
+                            {deletingFile === d.filename ? "…" : "✕"}
+                          </button>
                         </div>
                       ))}
                     </div>

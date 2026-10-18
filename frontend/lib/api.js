@@ -141,6 +141,19 @@ export async function getDocumentEvalSummary() {
   return res.json();
 }
 
+export async function deleteDocument(filename) {
+  const res = await fetch(`${API_BASE}/documents/${encodeURIComponent(filename)}`, {
+    method: "DELETE",
+    headers: authHeaders(),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to delete document");
+  }
+  return res.json();
+}
+
+
 
 export async function getAgentActions() {
   const res = await fetch(`${API_BASE}/agent/actions`, { headers: authHeaders() });
