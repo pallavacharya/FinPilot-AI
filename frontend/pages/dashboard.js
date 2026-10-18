@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/router";
 import ProductForecastTab from "../components/ProductForecastTab";
 import {
@@ -9,6 +9,9 @@ import {
   getFlaggedTransactions,
   reviewTransaction,
   askDocuments,
+  uploadDocument,
+  listDocuments,
+  getDocumentEvalSummary,
   getAgentActions,
   approveAction,
 } from "../lib/api";
@@ -23,11 +26,25 @@ export default function Dashboard() {
   const [fraud, setFraud] = useState(null);
   const [actions, setActions] = useState(null);
 
+  const [documents, setDocuments] = useState([]);
+  const [evalSummary, setEvalSummary] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadSuccess, setUploadSuccess] = useState(null);
+  const [uploadError, setUploadError] = useState(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef(null);
+
   const [chatLog, setChatLog] = useState([
     { role: "bot", text: "Hi, I'm the FinPilot document assistant. Ask about your invoices and statements \u2014 I'll cite the source." },
   ]);
   const [chatInput, setChatInput] = useState("");
   const [typing, setTyping] = useState(false);
+
+  function loadDocuments() {
+    listDocuments()
+      .then((res) => setDocuments(res.documents || []))
+      .catch(() => setDocuments([]));
+  }
 
   useEffect(() => {
     const s = getSession();
@@ -40,7 +57,15 @@ export default function Dashboard() {
     getForecastNextWeek().then((res) => setNextWeekItems(res.items || [])).catch(() => {});
     getFlaggedTransactions().then(setFraud).catch(() => {});
     getAgentActions().then(setActions).catch(() => {});
+    getDocumentEvalSummary().then(setEvalSummary).catch(() => setEvalSummary(null));
+    loadDocuments();
   }, []);
+
+  useEffect(() => {
+    if (tab === "chat") {
+      loadDocuments();
+    }
+  }, [tab]);
 
   function handleLogout() {
     logout();
@@ -57,9 +82,26 @@ export default function Dashboard() {
     getAgentActions().then(setActions);
   }
 
+  async function handleFileUpload(file) {
+    if (!file) return;
+    setUploading(true);
+    setUploadError(null);
+    setUploadSuccess(null);
+    try {
+      const res = await uploadDocument(file);
+      const chunkText = `${res.chunks} chunk${res.chunks === 1 ? "" : "s"}`;
+      setUploadSuccess(`${res.filename} indexed (${chunkText})`);
+      loadDocuments();
+    } catch (err) {
+      setUploadError(err.message || "Upload failed");
+    } finally {
+      setUploading(false);
+    }
+  }
+
   function sendChat(text) {
     const q = (text ?? chatInput).trim();
-    if (!q) return;
+    if (!q || typing) return;
     setChatLog((log) => [...log, { role: "user", text: q }]);
     setChatInput("");
     setTyping(true);
@@ -69,9 +111,9 @@ export default function Dashboard() {
         setTyping(false);
         setChatLog((log) => [...log, { role: "bot", text: res.answer, sources: res.sources }]);
       })
-      .catch(() => {
+      .catch((err) => {
         setTyping(false);
-        setChatLog((log) => [...log, { role: "bot", text: "Couldn't reach the document service." }]);
+        setChatLog((log) => [...log, { role: "bot", text: err.message || "Couldn't reach the document service." }]);
       });
   }
 
@@ -86,6 +128,9 @@ export default function Dashboard() {
     .sort((a, b) => b.predicted_sales - a.predicted_sales)
     .slice(0, 8);
   const maxTop8 = top8Items.length > 0 ? top8Items[0].predicted_sales : 1;
+  const hasSampleInvoices = documents.some(
+    (d) => d.filename === "sample_invoice.pdf" || d.filename === "sample_invoice_2.pdf"
+  );
 
   return (
     <div className="shell">
@@ -158,9 +203,15 @@ export default function Dashboard() {
                 <div className="kdelta">gated on human approval</div>
               </div>
               <div className="kpi">
-                <div className="klabel">Doc Q&amp;A accuracy</div>
-                <div className="kval up">100%</div>
-                <div className="kdelta">10/10 benchmark, 95% keyword coverage</div>
+                <div className="klabel">Retrieval check</div>
+                <div className={`kval ${evalSummary ? "up" : ""}`}>
+                  {evalSummary ? `${evalSummary.passed}/${evalSummary.total}` : "-"}
+                </div>
+                {evalSummary && (
+                  <div className="kdelta">
+                    right source retrieved ({evalSummary.documents_in_eval} sample invoices)
+                  </div>
+                )}
               </div>
             </div>
 
@@ -284,35 +335,153 @@ export default function Dashboard() {
             <div className="topbar">
               <div>
                 <h2>Document Q&amp;A</h2>
-                <div className="sub">Grounded retrieval over uploaded invoices &amp; statements \u00b7 served from /api/v1/documents</div>
+                <div className="sub">Grounded retrieval over uploaded invoices &amp; statements · served from /api/v1/documents</div>
               </div>
-              <span className="pill">4 documents indexed</span>
+              <span className="pill">
+                {documents.length === 0
+                  ? "No documents yet"
+                  : `${documents.length} document${documents.length === 1 ? "" : "s"} indexed`}
+              </span>
             </div>
-            <div className="card chatwrap">
-              <div className="suggest">
-                <button onClick={() => sendChat("How much did we spend on suppliers last quarter?")}>Supplier spend last quarter?</button>
-                <button onClick={() => sendChat("Which invoice has the highest amount?")}>Largest invoice?</button>
-                <button onClick={() => sendChat("Any overdue payments?")}>Overdue payments?</button>
-              </div>
-              <div className="chatlog">
-                {chatLog.map((m, i) => (
-                  <div key={i} className={`msg ${m.role === "user" ? "user" : "bot"}`}>
-                    {m.text}
-                    {m.sources && <span className="cite">Source: {m.sources.join(" \u00b7 ")}</span>}
+
+            <div className="doc-layout">
+              <div className="card doc-panel">
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                  <h3 style={{ margin: 0 }}>Indexed documents</h3>
+                  <span className="pill" style={{ fontSize: 10.5 }}>
+                    {documents.length} {documents.length === 1 ? "file" : "files"}
+                  </span>
+                </div>
+                <div className="cardsub" style={{ marginBottom: 4 }}>PDFs indexed for grounding</div>
+
+                <div
+                  className={`upload-zone ${isDragging ? "dragging" : ""}`}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    setIsDragging(true);
+                  }}
+                  onDragLeave={() => setIsDragging(false)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setIsDragging(false);
+                    const file = e.dataTransfer.files?.[0];
+                    if (file) handleFileUpload(file);
+                  }}
+                >
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".pdf,application/pdf"
+                    style={{ display: "none" }}
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) handleFileUpload(f);
+                      e.target.value = "";
+                    }}
+                  />
+                  <button
+                    type="button"
+                    className="btn primary"
+                    disabled={uploading}
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    {uploading ? "Indexing…" : "Upload PDF"}
+                  </button>
+                  <div className="upload-hint">Drop a PDF here or click to upload (max 10 MB)</div>
+                </div>
+
+                {uploadSuccess && (
+                  <div className="upload-status success">
+                    {uploadSuccess}
                   </div>
-                ))}
-                {typing && <div className="loading">FinPilot is thinking\u2026</div>}
+                )}
+                {uploadError && (
+                  <div className="upload-status error">
+                    {uploadError}
+                  </div>
+                )}
+
+                <div className="doc-list-wrap">
+                  {documents.length === 0 ? (
+                    <div className="doc-empty">
+                      Upload a PDF invoice to start asking questions.
+                    </div>
+                  ) : (
+                    <div className="doc-list">
+                      {documents.map((d) => (
+                        <div key={d.filename} className="doc-item">
+                          <span className="doc-badge">PDF</span>
+                          <div className="doc-meta">
+                            <div className="doc-name" title={d.filename}>{d.filename}</div>
+                            <div className="doc-sub">
+                              {d.pages} {d.pages === 1 ? "page" : "pages"} · {d.chunks} {d.chunks === 1 ? "chunk" : "chunks"}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
-              <div className="chatinput">
-                <input
-                  value={chatInput}
-                  onChange={(e) => setChatInput(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && sendChat()}
-                  placeholder="Ask about an invoice or statement\u2026"
-                />
-                <button className="btn primary" style={{ width: "auto" }} onClick={() => sendChat()}>
-                  Send
-                </button>
+
+              <div className="card chatwrap">
+                {hasSampleInvoices && (
+                  <div className="suggest">
+                    <button
+                      type="button"
+                      disabled={typing}
+                      onClick={() => sendChat("What is the total amount of invoice INV-1042?")}
+                    >
+                      What is the total amount of invoice INV-1042?
+                    </button>
+                    <button
+                      type="button"
+                      disabled={typing}
+                      onClick={() => sendChat("Who supplied the office notebooks?")}
+                    >
+                      Who supplied the office notebooks?
+                    </button>
+                    <button
+                      type="button"
+                      disabled={typing}
+                      onClick={() => sendChat("What is the payment due date for BlueSky Office Supplies?")}
+                    >
+                      What is the payment due date for BlueSky Office Supplies?
+                    </button>
+                  </div>
+                )}
+                <div className="chatlog">
+                  {chatLog.map((m, i) => (
+                    <div key={i} className={`msg ${m.role === "user" ? "user" : "bot"}`}>
+                      <div>{m.text}</div>
+                      {m.sources && m.sources.length > 0 && (
+                        <span className="cite">Source: {m.sources.join(" · ")}</span>
+                      )}
+                    </div>
+                  ))}
+                  {typing && <div className="loading">FinPilot is thinking…</div>}
+                </div>
+                <div className="chatinput">
+                  <input
+                    value={chatInput}
+                    disabled={typing}
+                    onChange={(e) => setChatInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !typing && chatInput.trim()) {
+                        sendChat();
+                      }
+                    }}
+                    placeholder="Ask about an invoice or statement…"
+                  />
+                  <button
+                    className="btn primary"
+                    style={{ width: "auto" }}
+                    disabled={typing || !chatInput.trim()}
+                    onClick={() => sendChat()}
+                  >
+                    Send
+                  </button>
+                </div>
               </div>
             </div>
           </div>

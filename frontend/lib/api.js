@@ -97,8 +97,50 @@ export async function askDocuments(question) {
     headers: { "Content-Type": "application/json", ...authHeaders() },
     body: JSON.stringify({ question }),
   });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Request failed");
+  }
   return res.json();
 }
+
+export async function uploadDocument(file) {
+  const formData = new FormData();
+  formData.append("file", file);
+  const res = await fetch(`${API_BASE}/documents/upload`, {
+    method: "POST",
+    headers: authHeaders(),
+    body: formData,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Request failed");
+  }
+  return res.json();
+}
+
+export async function listDocuments() {
+  const res = await fetch(`${API_BASE}/documents/list`, {
+    headers: authHeaders(),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Request failed");
+  }
+  return res.json();
+}
+
+export async function getDocumentEvalSummary() {
+  const res = await fetch(`${API_BASE}/documents/eval-summary`, {
+    headers: authHeaders(),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Request failed");
+  }
+  return res.json();
+}
+
 
 export async function getAgentActions() {
   const res = await fetch(`${API_BASE}/agent/actions`, { headers: authHeaders() });
