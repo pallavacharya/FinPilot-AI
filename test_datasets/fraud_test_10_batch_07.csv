@@ -1,0 +1,11 @@
+transaction_id,customer_id,amount,transaction_frequency,average_amount,time_interval_minutes,location_change,device_change,transaction_datetime,location,device,payment_method
+TXN_2026_0311,CUST_0006,3077.76,3,2074.05,120,False,False,2026-10-15 09:25:00,Vadodara,Tablet_App,Net_Banking
+TXN_2026_0312,CUST_0055,401.39,3,318.36,480,False,False,2026-10-15 10:02:00,Vadodara,Web_Browser,UPI
+TXN_2026_0313,CUST_0066,238.28,2,446.99,240,False,False,2026-10-15 11:30:00,Lucknow,Mobile_App,UPI
+TXN_2026_0314,CUST_0040,450.79,1,260.55,35,False,False,2026-10-15 12:33:00,Jaipur,Web_Browser,UPI
+TXN_2026_0315,CUST_0059,366.91,4,480.29,1440,False,False,2026-10-15 13:16:00,Ahmedabad,POS_Terminal,Credit_Card
+TXN_2026_0316,CUST_0002,5631.38,28,1045.9,9,True,True,2026-10-15 14:50:00,Kochi,Web_Browser,UPI
+TXN_2026_0317,CUST_0035,3186.25,1,2186.64,120,False,False,2026-10-15 15:28:00,Nagpur,POS_Terminal,UPI
+TXN_2026_0318,CUST_0034,2716.37,2,2188.33,240,False,False,2026-10-15 16:48:00,Kochi,Tablet_App,Credit_Card
+TXN_2026_0319,CUST_0048,13193.71,28,3428.45,9,False,True,2026-10-15 17:59:00,Vadodara,Mobile_App,UPI
+TXN_2026_0320,CUST_0066,3860.41,12,446.99,1,True,True,2026-10-15 19:07:00,Indore,Web_Browser,Credit_Card

@@ -1,0 +1,11 @@
+transaction_id,customer_id,amount,transaction_frequency,average_amount,time_interval_minutes,location_change,device_change,transaction_datetime,location,device,payment_method
+TXN_2026_0281,CUST_0016,1459.32,4,2539.86,60,False,False,2026-10-14 00:28:00,Delhi,Web_Browser,Credit_Card
+TXN_2026_0282,CUST_0074,3151.93,3,3060.11,1440,False,False,2026-10-14 01:35:00,Delhi,Web_Browser,Credit_Card
+TXN_2026_0283,CUST_0072,13882.05,16,3399.24,4,False,True,2026-10-14 02:44:00,Ahmedabad,POS_Terminal,Credit_Card
+TXN_2026_0284,CUST_0063,4881.82,28,868.83,7,False,True,2026-10-14 04:06:00,Hyderabad,Web_Browser,UPI
+TXN_2026_0285,CUST_0063,839.1,1,868.83,35,False,False,2026-10-14 05:11:00,Hyderabad,Tablet_App,Credit_Card
+TXN_2026_0286,CUST_0038,18100.57,12,2747.95,4,False,False,2026-10-14 05:57:00,Lucknow,Mobile_App,Net_Banking
+TXN_2026_0287,CUST_0071,195.32,3,414.41,120,False,False,2026-10-14 07:13:00,Vadodara,Mobile_App,Net_Banking
+TXN_2026_0288,CUST_0070,1304.66,4,2876.07,60,False,True,2026-10-14 08:13:00,Vadodara,Tablet_App,Debit_Card
+TXN_2026_0289,CUST_0045,588.17,1,613.57,60,False,False,2026-10-14 09:07:00,Chandigarh,POS_Terminal,Debit_Card
+TXN_2026_0290,CUST_0079,4160.3,1,3398.31,60,False,False,2026-10-14 10:15:00,Coimbatore,Mobile_App,Debit_Card
