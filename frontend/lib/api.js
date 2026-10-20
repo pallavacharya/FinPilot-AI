@@ -194,6 +194,10 @@ export async function deleteDocument(filename) {
 
 export async function getAgentActions() {
   const res = await fetch(`${API_BASE}/agent/actions`, { headers: authHeaders() });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to load agent actions");
+  }
   return res.json();
 }
 
@@ -203,5 +207,157 @@ export async function approveAction(actionId) {
     headers: { "Content-Type": "application/json", ...authHeaders() },
     body: JSON.stringify({ action_id: actionId }),
   });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Approval failed");
+  }
+  return res.json();
+}
+
+export async function rejectAction(actionId, reason = "") {
+  const res = await fetch(`${API_BASE}/agent/actions/reject`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify({ action_id: actionId, reason }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Rejection failed");
+  }
+  return res.json();
+}
+
+export async function runAgentChecks() {
+  const res = await fetch(`${API_BASE}/agent/run-checks`, {
+    method: "POST",
+    headers: authHeaders(),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to run checks");
+  }
+  return res.json();
+}
+
+export async function getNotifications(unreadOnly = false, limit = 200) {
+  const res = await fetch(`${API_BASE}/agent/notifications?unread_only=${unreadOnly}&limit=${limit}`, {
+    headers: authHeaders(),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to load notifications");
+  }
+  return res.json();
+}
+
+export async function getUnreadNotificationCount() {
+  const res = await fetch(`${API_BASE}/agent/notifications/unread-count`, {
+    headers: authHeaders(),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to load unread count");
+  }
+  return res.json();
+}
+
+export async function markNotificationsRead({ ids = null, all = false } = {}) {
+  const res = await fetch(`${API_BASE}/agent/notifications/read`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify({ ids, all }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to mark notifications read");
+  }
+  return res.json();
+}
+
+export async function getReports(kind = null, limit = 100) {
+  const query = new URLSearchParams();
+  if (kind) query.set("kind", kind);
+  query.set("limit", String(limit));
+  const res = await fetch(`${API_BASE}/agent/reports?${query.toString()}`, {
+    headers: authHeaders(),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to load reports");
+  }
+  return res.json();
+}
+
+export async function getReportById(reportId) {
+  const res = await fetch(`${API_BASE}/agent/reports/${encodeURIComponent(reportId)}`, {
+    headers: authHeaders(),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to load report");
+  }
+  return res.json();
+}
+
+export async function generateReport(kind, scope = "newest", batchId = null) {
+  const res = await fetch(`${API_BASE}/agent/reports/generate`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify({ kind, scope, batch_id: batchId }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to generate report");
+  }
+  return res.json();
+}
+
+export async function getAuditLog(limit = 100, event = null) {
+  const query = new URLSearchParams();
+  query.set("limit", String(limit));
+  if (event) query.set("event", event);
+  const res = await fetch(`${API_BASE}/agent/audit?${query.toString()}`, {
+    headers: authHeaders(),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to load audit log");
+  }
+  return res.json();
+}
+
+export async function getAgentSettings() {
+  const res = await fetch(`${API_BASE}/agent/settings`, {
+    headers: authHeaders(),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to load settings");
+  }
+  return res.json();
+}
+
+export async function updateAgentSettings(payload) {
+  const res = await fetch(`${API_BASE}/agent/settings`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to update settings");
+  }
+  return res.json();
+}
+
+export async function sendTestEmail() {
+  const res = await fetch(`${API_BASE}/agent/settings/test-email`, {
+    method: "POST",
+    headers: authHeaders(),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to send test email");
+  }
   return res.json();
 }

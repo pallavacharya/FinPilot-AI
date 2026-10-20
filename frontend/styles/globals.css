@@ -271,3 +271,13 @@ tr:last-child td{border-bottom:none;}
 
 
 
+
+/* Agent / Notifications / Reports enhancements */
+.global-topbar { display: flex; justify-content: flex-end; align-items: center; }
+.global-bell-btn:hover { background: var(--panel-2) !important; border-color: var(--faint) !important; }
+.notif-card:hover { border-color: var(--faint) !important; background: var(--panel-2) !important; }
+.notif-card.unread { border-left: 3px solid var(--accent); }
+.agentcard { transition: border-color 0.15s; }
+.agentcard:hover { border-color: var(--faint); }
+.agentcard.approved { border-left: 3px solid var(--accent); }
+.status-approved { color: var(--accent); font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; }

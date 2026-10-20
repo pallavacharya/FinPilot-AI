@@ -3,6 +3,11 @@ import { useRouter } from "next/router";
 import ProductForecastTab from "../components/ProductForecastTab";
 import Sidebar from "../components/Sidebar";
 import FraudTab from "../components/FraudTab";
+import NotificationsTab from "../components/NotificationsTab";
+import ReportsTab from "../components/ReportsTab";
+import AgentActivityTab from "../components/AgentActivityTab";
+import ApprovalDialog from "../components/ApprovalDialog";
+import { IconBell } from "../components/icons";
 import {
   getSession,
   logout,
@@ -17,6 +22,7 @@ import {
   getDocumentEvalSummary,
   getAgentActions,
   approveAction,
+  getUnreadNotificationCount,
 } from "../lib/api";
 
 export default function Dashboard() {
@@ -29,6 +35,8 @@ export default function Dashboard() {
   const [nextWeekItems, setNextWeekItems] = useState([]);
   const [fraud, setFraud] = useState(null);
   const [actions, setActions] = useState(null);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [activeApprovalAction, setActiveApprovalAction] = useState(null);
 
   const [documents, setDocuments] = useState([]);
   const [evalSummary, setEvalSummary] = useState(null);
@@ -51,6 +59,12 @@ export default function Dashboard() {
       .catch(() => setDocuments([]));
   }
 
+  function refreshUnread() {
+    getUnreadNotificationCount()
+      .then((res) => setUnreadCount(res.count || 0))
+      .catch(() => {});
+  }
+
   useEffect(() => {
     const s = getSession();
     if (!s) {
@@ -66,17 +80,37 @@ export default function Dashboard() {
         setSidebarCollapsed(true);
       }
     } catch (e) {}
+
     getForecastSummary().then(setSummary).catch(() => {});
     getForecastNextWeek().then((res) => setNextWeekItems(res.items || [])).catch(() => {});
     getFlaggedTransactions().then(setFraud).catch(() => {});
     getAgentActions().then(setActions).catch(() => {});
     getDocumentEvalSummary().then(setEvalSummary).catch(() => setEvalSummary(null));
     loadDocuments();
+    refreshUnread();
+
+    const interval = setInterval(() => {
+      refreshUnread();
+    }, 30000);
+
+    function onVisibilityChange() {
+      if (!document.hidden) {
+        refreshUnread();
+      }
+    }
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
   }, []);
 
   useEffect(() => {
     if (tab === "chat") {
       loadDocuments();
+    } else if (tab === "agent") {
+      getAgentActions().then(setActions).catch(() => {});
     }
   }, [tab]);
 
@@ -88,11 +122,6 @@ export default function Dashboard() {
   async function handleReview(id, decision) {
     await reviewTransaction(id, decision);
     getFlaggedTransactions().then(setFraud);
-  }
-
-  async function handleApprove(id) {
-    await approveAction(id);
-    getAgentActions().then(setActions);
   }
 
   async function handleFileUpload(file) {
@@ -127,7 +156,6 @@ export default function Dashboard() {
     }
   }
 
-
   function sendChat(text) {
     const q = (text ?? chatInput).trim();
     if (!q || typing) return;
@@ -148,10 +176,9 @@ export default function Dashboard() {
 
   if (!session) return null;
 
-  const initial = session.name ? session.name[0] : "U";
   const flagged = fraud?.transactions ?? [];
   const pendingCount = flagged.filter((t) => t.status === "pending").length;
-  const pendingActions = (actions?.actions ?? []).filter((a) => a.status !== "executed").length;
+  const pendingActions = (actions?.actions ?? []).filter((a) => a.status === "pending_approval" || a.status === "failed").length;
 
   const top8Items = [...nextWeekItems]
     .sort((a, b) => b.predicted_sales - a.predicted_sales)
@@ -170,9 +197,60 @@ export default function Dashboard() {
         onLogout={handleLogout}
         collapsed={sidebarCollapsed}
         setCollapsed={setSidebarCollapsed}
+        unreadCount={unreadCount}
       />
 
       <main>
+        {/* Global slim topbar with notification bell on every page */}
+        <div
+          className="global-topbar"
+          style={{
+            display: "flex",
+            justifyContent: "flex-end",
+            alignItems: "center",
+            padding: "0 0 16px 0",
+            marginBottom: "6px",
+          }}
+        >
+          <button
+            type="button"
+            className="global-bell-btn"
+            onClick={() => setTab("notifications")}
+            aria-label={`Notifications, ${unreadCount} unread`}
+            title={unreadCount > 0 ? `${unreadCount} unread notifications` : "Notifications"}
+            style={{
+              background: tab === "notifications" ? "rgba(62,207,142,0.12)" : "var(--panel)",
+              border: `1px solid ${tab === "notifications" ? "var(--accent)" : "var(--border)"}`,
+              borderRadius: "8px",
+              padding: "7px 11px",
+              color: tab === "notifications" ? "var(--accent)" : "var(--text)",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: "7px",
+              position: "relative",
+              transition: "background 0.15s, border-color 0.15s, color 0.15s",
+            }}
+          >
+            <IconBell size={18} />
+            {unreadCount > 0 && (
+              <span
+                style={{
+                  background: "var(--accent)",
+                  color: "#08120D",
+                  fontSize: "11px",
+                  fontWeight: 800,
+                  padding: "1px 6px",
+                  borderRadius: "10px",
+                  lineHeight: 1.3,
+                }}
+              >
+                {unreadCount > 9 ? "9+" : unreadCount}
+              </span>
+            )}
+          </button>
+        </div>
+
         {tab === "overview" && (
           <div>
             <div className="topbar">
@@ -198,105 +276,80 @@ export default function Dashboard() {
                 </div>
               </div>
               <div className="kpi">
+                <div className="klabel">Next week total</div>
+                <div className="kval">
+                  {summary ? `$${(summary.next_week_total / 1000).toFixed(1)}K` : "…"}
+                </div>
+                <div className="kdelta">across 17 sub-categories</div>
+              </div>
+              <div className="kpi">
                 <div className="klabel">Flagged transactions</div>
-                <div className="kval warn">{fraud ? (fraud.count ?? pendingCount) : "…"}</div>
-                <div className="kdelta">suspicious across all uploads</div>
+                <div className="kval warn">{pendingCount}</div>
+                <div className="kdelta">awaiting review</div>
               </div>
               <div className="kpi">
                 <div className="klabel">Agent actions pending</div>
-                <div className="kval">{actions ? pendingActions : "…"}</div>
-                <div className="kdelta">gated on human approval</div>
-              </div>
-              <div className="kpi">
-                <div className="klabel">Retrieval check</div>
-                <div className={`kval ${evalSummary ? "up" : ""}`}>
-                  {evalSummary ? `${evalSummary.passed}/${evalSummary.total}` : "-"}
-                </div>
-                {evalSummary && (
-                  <div className="kdelta">
-                    right source retrieved ({evalSummary.documents_in_eval} sample invoices)
-                  </div>
-                )}
+                <div className="kval">{pendingActions}</div>
+                <div className="kdelta">requires human approval</div>
               </div>
             </div>
 
             <div className="grid">
               <div className="card">
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
-                  <div>
-                    <h3>Next week by sub-category</h3>
-                    <div className="cardsub" style={{ marginBottom: 0 }}>Top 8 products by predicted sales</div>
-                  </div>
-                  <span className="pill" style={{ fontSize: 10.5 }}>Superstore US$</span>
-                </div>
-
-                {nextWeekItems.length === 0 ? (
-                  <div className="loading">Loading forecast…</div>
+                <h3>Top sub-categories next week</h3>
+                <div className="sub">Ranked by projected demand</div>
+                {top8Items.length === 0 ? (
+                  <div className="loading">Loading forecast data…</div>
                 ) : (
-                  <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 10 }}>
+                  <div className="bars">
                     {top8Items.map((item) => {
-                      const pct = Math.max(8, Math.min(100, (item.predicted_sales / maxTop8) * 100));
+                      const pct = Math.max(4, Math.round((item.predicted_sales / maxTop8) * 100));
                       return (
-                        <div key={item.sub_category}>
-                          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12.5, marginBottom: 4 }}>
-                            <span style={{ fontWeight: 500 }}>{item.sub_category}</span>
-                            <span className="amt" style={{ color: "var(--accent)" }}>
-                              ${Number(item.predicted_sales).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                            </span>
+                        <div key={item.sub_category} className="bar-row">
+                          <span className="bar-label">{item.sub_category}</span>
+                          <div className="bar-track">
+                            <div className="bar-fill" style={{ width: `${pct}%` }}></div>
                           </div>
-                          <div style={{ height: 6, background: "var(--panel-2)", borderRadius: 3, overflow: "hidden" }}>
-                            <div style={{ width: `${pct}%`, height: "100%", background: "var(--accent)", borderRadius: 3 }}></div>
-                          </div>
+                          <span className="bar-val">
+                            ${Math.round(item.predicted_sales).toLocaleString("en-US")}
+                          </span>
                         </div>
                       );
                     })}
                   </div>
                 )}
-
-                <button
-                  className="btn ghost"
-                  style={{ marginTop: 16, width: "100%", fontSize: 12.5, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
-                  onClick={() => setTab("forecast")}
-                >
-                  Open product forecast <span>→</span>
-                </button>
               </div>
 
               <div className="card">
-                <h3>System status</h3>
-                <div className="cardsub">Docker Compose · Render deployment</div>
-                <table>
-                  <tbody>
-                    <tr><td>Frontend (Next.js)</td><td style={{ textAlign: "right", color: "var(--accent)" }}>● running</td></tr>
-                    <tr><td>API gateway (FastAPI)</td><td style={{ textAlign: "right", color: "var(--accent)" }}>● running</td></tr>
-                    <tr><td>Forecasting service</td><td style={{ textAlign: "right", color: "var(--accent)" }}>● running</td></tr>
-                    <tr><td>Fraud detection service</td><td style={{ textAlign: "right", color: "var(--accent)" }}>● running</td></tr>
-                    <tr><td>RAG / ChromaDB</td><td style={{ textAlign: "right", color: "var(--accent)" }}>● running</td></tr>
-                    <tr><td>Agent layer (LangGraph)</td><td style={{ textAlign: "right", color: "var(--amber)" }}>● {pendingActions} pending</td></tr>
-                  </tbody>
-                </table>
-                <div className="badge-row">
-                  <span className="stackbadge">Next.js</span>
-                  <span className="stackbadge">FastAPI</span>
-                  <span className="stackbadge">JWT · RBAC</span>
-                  <span className="stackbadge">Docker</span>
-                  <span className="stackbadge">Render</span>
-                </div>
+                <h3>Live summary</h3>
+                <div className="sub">Current system state across all modules</div>
+                <ul className="agent-highlights">
+                  <li>
+                    <strong>Forecasting:</strong> Ridge regression trained on 4 years of weekly sales.
+                  </li>
+                  <li>
+                    <strong>Fraud detector:</strong> Isolation Forest + rule heuristics; pending reviews require analyst or owner approval.
+                  </li>
+                  <li>
+                    <strong>Document store:</strong> {documents.length} document{documents.length === 1 ? "" : "s"} indexed in SQLite.
+                  </li>
+                  <li>
+                    <strong>Approval gate:</strong> Notifications and actions queued; nothing sent without human click.
+                  </li>
+                </ul>
               </div>
             </div>
           </div>
         )}
 
-        {tab === "forecast" && (
-          <ProductForecastTab />
-        )}
+        {tab === "forecast" && <ProductForecastTab />}
 
         {tab === "fraud" && (
           <FraudTab
             session={session}
-            onHistoryChange={() => {
-              getFlaggedTransactions().then(setFraud).catch(() => {});
-            }}
+            onHistoryChange={() => {}}
+            onBatchUploaded={refreshUnread}
+            onNavigateTab={setTab}
           />
         )}
 
@@ -305,38 +358,34 @@ export default function Dashboard() {
             <div className="topbar">
               <div>
                 <h2>Document Q&amp;A</h2>
-                <div className="sub">Grounded retrieval over uploaded invoices &amp; statements · served from /api/v1/documents</div>
+                <div className="sub">Financial document search with exact source citations</div>
               </div>
-              <span className="pill">
-                {documents.length === 0
-                  ? "No documents yet"
-                  : `${documents.length} document${documents.length === 1 ? "" : "s"} indexed`}
-              </span>
+              <span className="pill">SQLite Vector + BM25</span>
             </div>
 
-            <div className="doc-layout">
-              <div className="card doc-panel">
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-                  <h3 style={{ margin: 0 }}>Indexed documents</h3>
-                  <span className="pill" style={{ fontSize: 10.5 }}>
-                    {documents.length} {documents.length === 1 ? "file" : "files"}
-                  </span>
+            <div className="chatlayout">
+              <div className="card uploadcol">
+                <h3>Indexed Documents</h3>
+                <div className="sub" style={{ marginBottom: "14px" }}>
+                  Upload PDF invoices or statements to query them with citations.
                 </div>
-                <div className="cardsub" style={{ marginBottom: 4 }}>PDFs indexed for grounding</div>
 
                 <div
-                  className={`upload-zone ${isDragging ? "dragging" : ""}`}
+                  className={`dropzone ${isDragging ? "dragging" : ""} ${uploading ? "uploading" : ""}`}
                   onDragOver={(e) => {
                     e.preventDefault();
-                    setIsDragging(true);
+                    if (!uploading) setIsDragging(true);
                   }}
                   onDragLeave={() => setIsDragging(false)}
                   onDrop={(e) => {
                     e.preventDefault();
                     setIsDragging(false);
+                    if (uploading) return;
                     const file = e.dataTransfer.files?.[0];
                     if (file) handleFileUpload(file);
                   }}
+                  onClick={() => !uploading && fileInputRef.current?.click()}
+                  style={{ cursor: uploading ? "default" : "pointer" }}
                 >
                   <input
                     ref={fileInputRef}
@@ -344,55 +393,48 @@ export default function Dashboard() {
                     accept=".pdf,application/pdf"
                     style={{ display: "none" }}
                     onChange={(e) => {
-                      const f = e.target.files?.[0];
-                      if (f) handleFileUpload(f);
+                      const file = e.target.files?.[0];
+                      if (file) handleFileUpload(file);
                       e.target.value = "";
                     }}
                   />
-                  <button
-                    type="button"
-                    className="btn primary"
-                    disabled={uploading}
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    {uploading ? "Indexing…" : "Upload PDF"}
-                  </button>
-                  <div className="upload-hint">Drop a PDF here or click to upload (max 10 MB)</div>
+                  <div className="dropicon">📄</div>
+                  <div className="dropprompt">
+                    {uploading ? (
+                      <span>Indexing document…</span>
+                    ) : (
+                      <>
+                        <strong>Drop a PDF here</strong> or click to browse
+                      </>
+                    )}
+                  </div>
+                  <div className="dropsub">Maximum file size 10 MB</div>
                 </div>
 
-                {uploadSuccess && (
-                  <div className="upload-status success">
-                    {uploadSuccess}
-                  </div>
-                )}
-                {uploadError && (
-                  <div className="upload-status error">
-                    {uploadError}
-                  </div>
-                )}
+                {uploadSuccess && <div className="banner success">{uploadSuccess}</div>}
+                {uploadError && <div className="banner error">{uploadError}</div>}
 
-                <div className="doc-list-wrap">
+                <div className="doclist">
+                  <div className="doclist-title">Currently Indexed ({documents.length})</div>
                   {documents.length === 0 ? (
-                    <div className="doc-empty">
-                      Upload a PDF invoice to start asking questions.
-                    </div>
+                    <div className="docempty">No documents uploaded yet.</div>
                   ) : (
-                    <div className="doc-list">
-                      {documents.map((d) => (
-                        <div key={d.filename} className="doc-item">
-                          <span className="doc-badge">PDF</span>
-                          <div className="doc-meta">
-                            <div className="doc-name" title={d.filename}>{d.filename}</div>
-                            <div className="doc-sub">
-                              {d.pages} {d.pages === 1 ? "page" : "pages"} · {d.chunks} {d.chunks === 1 ? "chunk" : "chunks"}
-                            </div>
-                          </div>
+                    <div className="docitems">
+                      {documents.map((d, i) => (
+                        <div key={i} className="docitem">
+                          <span className="docname" title={d.filename}>
+                            {d.filename}
+                          </span>
+                          <span className="docmeta">
+                            {d.chunks} chunk{d.chunks === 1 ? "" : "s"}
+                          </span>
                           <button
                             type="button"
-                            className="doc-del-btn"
-                            title={`Remove ${d.filename}`}
+                            className="docdelete-btn"
                             disabled={deletingFile === d.filename}
                             onClick={() => handleDeleteDocument(d.filename)}
+                            title={`Remove ${d.filename}`}
+                            aria-label={`Remove ${d.filename}`}
                           >
                             {deletingFile === d.filename ? "…" : "✕"}
                           </button>
@@ -466,38 +508,38 @@ export default function Dashboard() {
           </div>
         )}
 
+        {tab === "notifications" && (
+          <NotificationsTab
+            onOpenApproval={setActiveApprovalAction}
+            onNavigateTab={setTab}
+            onRefreshCount={refreshUnread}
+          />
+        )}
+
+        {tab === "reports" && (
+          <ReportsTab onOpenApproval={setActiveApprovalAction} />
+        )}
+
         {tab === "agent" && (
-          <div>
-            <div className="topbar">
-              <div>
-                <h2>Agent activity</h2>
-                <div className="sub">LangGraph decision loop · served from /api/v1/agent</div>
-              </div>
-              <span className="pill">Audit trail: 100% coverage</span>
-            </div>
-            {!actions ? (
-              <div className="loading">Loading agent actions…</div>
-            ) : (
-              actions.actions.map((a) => (
-                <div key={a.id} className={`agentcard ${a.status === "executed" ? "approved" : ""}`}>
-                  <div className="agenthead">
-                    <div className="atitle">{a.title}</div>
-                  </div>
-                  <div className="agentbody">{a.body}</div>
-                  <div className="agentactions">
-                    {a.status === "executed" ? (
-                      <span className="status-approved"><span className="dot"></span>Approved &amp; executed</span>
-                    ) : (
-                      <button className="btn primary" style={{ width: "auto" }} onClick={() => handleApprove(a.id)}>
-                        Approve
-                      </button>
-                    )}
-                  </div>
-                  <div className="audit">audit_id: {a.id} · actor: agent.langgraph · gate: human_approval_required</div>
-                </div>
-              ))
-            )}
-          </div>
+          <AgentActivityTab
+            session={session}
+            onOpenApproval={setActiveApprovalAction}
+            onRefreshCount={refreshUnread}
+            onNavigateTab={setTab}
+          />
+        )}
+
+        {/* Global Modal Approval Dialog */}
+        {activeApprovalAction && (
+          <ApprovalDialog
+            action={activeApprovalAction}
+            onClose={() => setActiveApprovalAction(null)}
+            onSuccess={() => {
+              refreshUnread();
+              getAgentActions().then(setActions).catch(() => {});
+            }}
+            onGoToSettings={() => setTab("agent")}
+          />
         )}
       </main>
     </div>

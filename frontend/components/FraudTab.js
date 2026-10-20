@@ -79,7 +79,7 @@ function downloadTemplate() {
   URL.revokeObjectURL(url);
 }
 
-export default function FraudTab({ session, onHistoryChange }) {
+export default function FraudTab({ session, onHistoryChange, onBatchUploaded, onNavigateTab }) {
   const [historyData, setHistoryData] = useState(null);
   const [loadingHistory, setLoadingHistory] = useState(true);
   const [historyError, setHistoryError] = useState(null);
@@ -187,9 +187,13 @@ export default function FraudTab({ session, onHistoryChange }) {
     try {
       const res = await uploadFraudCsv(file);
       const newBatch = res.batch;
+      if (onBatchUploaded) {
+        onBatchUploaded();
+      }
       setUploadStatus({
         type: "success",
         message: `${newBatch.total} transactions scored, ${newBatch.suspicious} suspicious`,
+        batch: newBatch,
       });
 
       // Reload history and highlight/scroll to new batch
@@ -378,8 +382,36 @@ export default function FraudTab({ session, onHistoryChange }) {
         </div>
 
         {uploadStatus && (
-          <div className={`upload-status-banner ${uploadStatus.type}`} style={{ marginTop: 14 }}>
-            {uploadStatus.message}
+          <div
+            className={`upload-status-banner ${uploadStatus.type}`}
+            style={{
+              marginTop: 14,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              flexWrap: "wrap",
+              gap: "8px",
+            }}
+          >
+            <span>{uploadStatus.message}</span>
+            {uploadStatus.type === "success" && onNavigateTab && (
+              <button
+                type="button"
+                onClick={() => onNavigateTab("notifications")}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: "var(--accent)",
+                  fontWeight: 600,
+                  textDecoration: "underline",
+                  cursor: "pointer",
+                  fontSize: "12px",
+                  padding: 0,
+                }}
+              >
+                Review alert report in Notifications &rarr;
+              </button>
+            )}
           </div>
         )}
       </div>

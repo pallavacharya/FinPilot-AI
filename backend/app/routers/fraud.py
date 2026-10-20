@@ -1,9 +1,12 @@
+import logging
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel
 
 from app.auth_utils import require_permission
 from modules.fraud import get_flagged_transactions
+
+logger = logging.getLogger("finpilot.fraud")
 
 router = APIRouter()
 
@@ -91,6 +94,14 @@ def _process_and_score_csv(filename: str, content_str: str, user_id: str) -> dic
         r["rank"] = rank
 
     batch = save_batch(filename, user_id, sorted_tx)
+
+    # Trigger rule-based agent workflow on fraud upload
+    try:
+        from modules import agent
+        agent.on_fraud_upload(batch["id"])
+    except Exception as agent_err:
+        logger.exception("Agent trigger failed on fraud upload: %s", agent_err)
+
     return {"batch": batch}
 
 

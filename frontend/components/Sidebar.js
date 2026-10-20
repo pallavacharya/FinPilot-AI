@@ -6,6 +6,8 @@ import {
   IconFraud,
   IconChat,
   IconAgent,
+  IconBell,
+  IconReport,
   IconSignOut,
   IconSidebarToggle,
 } from "./icons";
@@ -15,6 +17,8 @@ const NAV_ITEMS = [
   { id: "forecast", label: "Product forecast", Icon: IconForecast },
   { id: "fraud", label: "Fraud alerts", Icon: IconFraud },
   { id: "chat", label: "Document Q&A", Icon: IconChat },
+  { id: "notifications", label: "Notifications", Icon: IconBell, hasBadge: true },
+  { id: "reports", label: "Reports", Icon: IconReport },
   { id: "agent", label: "Agent activity", Icon: IconAgent },
 ];
 
@@ -25,6 +29,7 @@ export default function Sidebar({
   onLogout,
   collapsed,
   setCollapsed,
+  unreadCount = 0,
 }) {
   const initial = session?.name ? session.name[0] : "U";
 
@@ -57,22 +62,56 @@ export default function Sidebar({
       </div>
 
       <div className="nav-items-list">
-        {NAV_ITEMS.map(({ id, label, Icon }) => {
+        {NAV_ITEMS.map(({ id, label, Icon, hasBadge }) => {
           const isActive = tab === id;
+          const showBadge = hasBadge && unreadCount > 0;
           return (
             <button
               key={id}
               type="button"
               className={`navitem ${isActive ? "active" : ""}`}
               onClick={() => setTab(id)}
-              aria-label={label}
+              aria-label={showBadge ? `${label}, ${unreadCount} unread` : label}
               title={collapsed ? label : undefined}
             >
-              <span className="navicon">
+              <span className="navicon" style={{ position: "relative" }}>
                 <Icon size={20} />
+                {collapsed && showBadge && (
+                  <span
+                    style={{
+                      position: "absolute",
+                      top: "-2px",
+                      right: "-3px",
+                      width: "7px",
+                      height: "7px",
+                      borderRadius: "50%",
+                      background: "var(--accent)",
+                    }}
+                  />
+                )}
               </span>
               {!collapsed && <span className="navlabel">{label}</span>}
-              {collapsed && <span className="sidebar-tooltip">{label}</span>}
+              {!collapsed && showBadge && (
+                <span
+                  style={{
+                    marginLeft: "auto",
+                    background: "var(--accent)",
+                    color: "#08120D",
+                    fontSize: "10.5px",
+                    fontWeight: 800,
+                    padding: "1px 6px",
+                    borderRadius: "10px",
+                    lineHeight: 1.4,
+                  }}
+                >
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
+              )}
+              {collapsed && (
+                <span className="sidebar-tooltip">
+                  {label} {showBadge ? `(${unreadCount > 9 ? "9+" : unreadCount})` : ""}
+                </span>
+              )}
             </button>
           );
         })}

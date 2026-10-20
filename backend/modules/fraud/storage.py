@@ -232,3 +232,87 @@ def get_all_flagged_for_contract() -> Dict[str, Any]:
         "total_scanned": total_scanned,
         "transactions": txns,
     }
+
+
+def get_batch_by_id(batch_id: int) -> Optional[Dict[str, Any]]:
+    init_db()
+    with _get_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM fraud_batches WHERE id = ?;", (batch_id,))
+        b = cursor.fetchone()
+        if not b:
+            return None
+
+        cursor.execute(
+            """
+            SELECT rank, transaction_id, customer_id, amount, risk_score,
+                   status, ai_flagged, ai_anomaly_score, reasons, details
+            FROM fraud_transactions
+            WHERE batch_id = ?
+            ORDER BY rank ASC;
+            """,
+            (batch_id,),
+        )
+        tx_rows = cursor.fetchall()
+        tx_list = [
+            {
+                "rank": r["rank"],
+                "transaction_id": r["transaction_id"],
+                "customer_id": r["customer_id"],
+                "amount": r["amount"],
+                "risk_score": r["risk_score"],
+                "status": r["status"],
+                "ai_flagged": bool(r["ai_flagged"]),
+                "ai_anomaly_score": r["ai_anomaly_score"],
+                "reasons": json.loads(r["reasons"]) if r["reasons"] else [],
+                "details": json.loads(r["details"]) if r["details"] else {},
+            }
+            for r in tx_rows
+        ]
+
+        return {
+            "id": b["id"],
+            "filename": b["filename"],
+            "uploaded_at": b["uploaded_at"],
+            "uploaded_by": b["uploaded_by"],
+            "total": b["total"],
+            "suspicious": b["suspicious"],
+            "normal": b["normal"],
+            "transactions": tx_list,
+        }
+
+
+def get_latest_batch() -> Optional[Dict[str, Any]]:
+    init_db()
+    with _get_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT id FROM fraud_batches ORDER BY id DESC LIMIT 1;")
+        row = cursor.fetchone()
+        if not row:
+            return None
+        return get_batch_by_id(row["id"])
+
+
+def get_customer_batch_counts() -> Dict[str, int]:
+    init_db()
+    with _get_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            SELECT customer_id, COUNT(DISTINCT batch_id) as batch_count
+            FROM fraud_transactions
+            WHERE status = 'SUSPICIOUS' AND customer_id IS NOT NULL AND customer_id != ''
+            GROUP BY customer_id;
+            """
+        )
+        rows = cursor.fetchall()
+        return {r["customer_id"]: r["batch_count"] for r in rows}
+
+
+def get_all_batches_summary() -> List[Dict[str, Any]]:
+    init_db()
+    with _get_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT id, filename, uploaded_at, total, suspicious, normal FROM fraud_batches ORDER BY id DESC;")
+        return [dict(r) for r in cursor.fetchall()]
+
