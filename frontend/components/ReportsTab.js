@@ -304,6 +304,19 @@ export default function ReportsTab({ onOpenApproval }) {
                           >
                             Preview
                           </button>
+                          <button
+                            type="button"
+                            className="btn ghost"
+                            onClick={() => {
+                              getReportById(rep.id).then((full) => {
+                                if (full.report?.html) handleDownloadHtml(full.report);
+                              });
+                            }}
+                            style={{ padding: "5px 10px", fontSize: "12px", display: "inline-flex", alignItems: "center", gap: "4px" }}
+                            title="Download complete report HTML"
+                          >
+                            <IconDownload size={13} /> HTML
+                          </button>
                           {canSend && (
                             <button
                               type="button"
@@ -373,6 +386,25 @@ export default function ReportsTab({ onOpenApproval }) {
                     style={{ padding: "5px 12px", fontSize: "12px", display: "flex", alignItems: "center", gap: "6px" }}
                   >
                     <IconDownload size={14} /> Download HTML
+                  </button>
+                )}
+                {previewReport.attachment_csv && (
+                  <button
+                    type="button"
+                    className="btn ghost"
+                    onClick={() => {
+                      const blob = new Blob([previewReport.attachment_csv], { type: "text/csv;charset=utf-8" });
+                      const url = URL.createObjectURL(blob);
+                      const link = document.createElement("a");
+                      link.href = url;
+                      link.download = `FinPilot_Attachment_${previewReport.id?.slice(0, 8) || "data"}.csv`;
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                    }}
+                    style={{ padding: "5px 12px", fontSize: "12px", display: "flex", alignItems: "center", gap: "6px" }}
+                  >
+                    <IconDownload size={14} /> Download CSV
                   </button>
                 )}
                 <button

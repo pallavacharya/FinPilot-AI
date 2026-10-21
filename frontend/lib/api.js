@@ -232,17 +232,34 @@ export async function getAgentActions() {
   return res.json();
 }
 
-export async function approveAction(actionId) {
+export async function approveAction(actionId, recipientEmail = null) {
+  const payload = { action_id: actionId };
+  if (recipientEmail && recipientEmail.trim()) {
+    payload.recipient_email = recipientEmail.trim();
+  }
   const res = await fetch(`${API_BASE}/agent/actions/approve`, {
     method: "POST",
     headers: { "Content-Type": "application/json", ...authHeaders() },
-    body: JSON.stringify({ action_id: actionId }),
+    body: JSON.stringify(payload),
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     throw new Error(err.detail || "Approval failed");
   }
   return res.json();
+}
+
+export function downloadReportAsFile(filename, content, mimeType = "text/html") {
+  if (typeof window === "undefined" || !content) return;
+  const blob = new Blob([content], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 export async function rejectAction(actionId, reason = "") {

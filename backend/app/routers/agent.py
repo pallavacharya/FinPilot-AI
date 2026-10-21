@@ -1,6 +1,7 @@
 import re
 from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import HTMLResponse, PlainTextResponse
 from pydantic import BaseModel, Field
 
 from app.auth_utils import require_permission
@@ -22,12 +23,13 @@ def list_actions(user=Depends(require_permission("agent:approve"))):
 
 class ApproveRequest(BaseModel):
     action_id: str
+    recipient_email: Optional[str] = None
 
 
 @router.post("/actions/approve")
 def approve(payload: ApproveRequest, user=Depends(require_permission("agent:approve"))):
     try:
-        return agent.approve_action(payload.action_id, user["user_id"])
+        return agent.approve_action(payload.action_id, user["user_id"], recipient_email=payload.recipient_email)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except RuntimeError as e:
@@ -108,6 +110,31 @@ def get_report(report_id: str, user=Depends(require_permission("agent:approve"))
     if not report:
         raise HTTPException(status_code=404, detail="Report not found")
     return {"report": report}
+
+
+@router.get("/reports/{report_id}/download-html")
+def download_report_html(report_id: str, user=Depends(require_permission("agent:approve"))):
+    report = store.get_report_by_id(report_id)
+    if not report or not report.get("html"):
+        raise HTTPException(status_code=404, detail="Report HTML not found")
+    filename = f"FinPilot_Report_{report_id[:8]}.html"
+    return HTMLResponse(
+        content=report["html"],
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@router.get("/reports/{report_id}/download-csv")
+def download_report_csv(report_id: str, user=Depends(require_permission("agent:approve"))):
+    report = store.get_report_by_id(report_id)
+    if not report or not report.get("attachment_csv"):
+        raise HTTPException(status_code=404, detail="No CSV attachment found for this report")
+    filename = f"FinPilot_Report_Data_{report_id[:8]}.csv"
+    return PlainTextResponse(
+        content=report["attachment_csv"],
+        media_type="text/csv",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 class GenerateReportRequest(BaseModel):

@@ -560,6 +560,7 @@ export default function Dashboard() {
         {activeApprovalAction && (
           <ApprovalDialog
             action={activeApprovalAction}
+            session={session}
             onClose={() => setActiveApprovalAction(null)}
             onSuccess={() => {
               refreshUnread();

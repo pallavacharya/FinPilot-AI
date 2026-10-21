@@ -1,0 +1,22 @@
+sub_category,category,price_change_pct,stock,predicted_sales
+Accessories,Technology,6.0,450,1420.0
+Appliances,Office Supplies,5.0,240,960.0
+Art,Office Supplies,3.0,550,145.0
+Binders,Office Supplies,4.0,900,1260.0
+Bookcases,Furniture,5.0,130,1180.0
+Chairs,Furniture,8.0,310,2350.0
+Copiers,Technology,8.0,95,1620.0
+Envelopes,Office Supplies,2.0,880,85.0
+Fasteners,Office Supplies,0.0,1050,28.0
+Furnishings,Furniture,6.0,380,820.0
+Labels,Office Supplies,2.0,760,78.0
+Machines,Technology,10.0,75,920.0
+Paper,Office Supplies,4.0,1100,580.0
+Phones,Technology,10.0,520,1850.0
+Storage,Office Supplies,5.0,620,1340.0
+Supplies,Office Supplies,4.0,350,550.0
+Tables,Furniture,6.0,150,1120.0
+Smartwatches,Technology,8.0,210,1480.0
+Ergonomic Desks,Furniture,6.0,120,1980.0
+Wireless Keyboards,Technology,4.0,260,1050.0
+Gaming Monitors,Technology,0.0,90,1840.0

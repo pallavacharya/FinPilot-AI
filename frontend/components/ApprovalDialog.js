@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { getAgentSettings, approveAction, rejectAction, getReportById } from "../lib/api";
-import { IconX, IconCheck, IconMail } from "./icons";
+import { getAgentSettings, approveAction, rejectAction, getReportById, downloadReportAsFile } from "../lib/api";
+import { IconX, IconCheck, IconMail, IconDownload } from "./icons";
 
 export default function ApprovalDialog({
   action,
   reportId,
+  session,
   onClose,
   onSuccess,
   onGoToSettings,
@@ -18,27 +19,39 @@ export default function ApprovalDialog({
   const [showRejectInput, setShowRejectInput] = useState(false);
   const [errorMsg, setErrorMsg] = useState(null);
   const [successMsg, setSuccessMsg] = useState(null);
+  const [recipientEmail, setRecipientEmail] = useState("");
+  const [isEditingRecipient, setIsEditingRecipient] = useState(false);
 
   const effectiveReportId = reportId || action?.report_id;
 
   useEffect(() => {
     let mounted = true;
+    let localEmail = session?.email || "";
+    if (!localEmail) {
+      try {
+        const s = JSON.parse(localStorage.getItem("finpilot_session") || "{}");
+        localEmail = s.email || "";
+      } catch (e) {}
+    }
+
     Promise.all([
       getAgentSettings().catch(() => null),
       effectiveReportId ? getReportById(effectiveReportId).catch(() => null) : Promise.resolve(null),
     ]).then(([sData, rData]) => {
       if (!mounted) return;
       if (sData) setSettings(sData);
+      const defaultTo = localEmail || sData?.owner_email?.trim() || "";
+      setRecipientEmail(defaultTo);
       if (rData?.report) setReport(rData.report);
       setLoading(false);
     });
     return () => {
       mounted = false;
     };
-  }, [effectiveReportId]);
+  }, [effectiveReportId, session]);
 
-  const ownerEmail = settings?.owner_email?.trim() || "";
-  const isEmailSet = Boolean(ownerEmail && ownerEmail.includes("@"));
+  const effectiveToEmail = recipientEmail || settings?.owner_email?.trim() || "";
+  const isEmailSet = Boolean(effectiveToEmail && effectiveToEmail.includes("@"));
   const emailMode = settings?.email?.mode || "dry_run";
   const isDryRun = emailMode === "dry_run";
 
@@ -48,8 +61,8 @@ export default function ApprovalDialog({
     setErrorMsg(null);
     setSuccessMsg(null);
     try {
-      const res = await approveAction(action.id);
-      const msg = res.email?.message || "Report approved and dispatched successfully.";
+      const res = await approveAction(action.id, effectiveToEmail);
+      const msg = res.email?.message || `Report approved and dispatched to ${effectiveToEmail}.`;
       setSuccessMsg(msg);
       if (onSuccess) onSuccess();
       setTimeout(() => {
@@ -116,21 +129,45 @@ export default function ApprovalDialog({
               Action {action?.id ? `#${action.id}` : "Preview"} &middot; Stored snapshot
             </div>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close"
-            style={{
-              background: "none",
-              border: "none",
-              color: "var(--muted)",
-              cursor: "pointer",
-              padding: "4px",
-              display: "flex",
-            }}
-          >
-            <IconX size={20} />
-          </button>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            {report?.html && (
+              <button
+                type="button"
+                className="btn ghost"
+                onClick={() => downloadReportAsFile(`FinPilot_Report_${effectiveReportId || "snapshot"}.html`, report.html, "text/html")}
+                style={{ fontSize: "12px", padding: "4px 10px", width: "auto", display: "inline-flex", alignItems: "center", gap: "5px" }}
+                title="Download complete report HTML offline"
+              >
+                <IconDownload size={13} /> HTML
+              </button>
+            )}
+            {report?.attachment_csv && (
+              <button
+                type="button"
+                className="btn ghost"
+                onClick={() => downloadReportAsFile(`FinPilot_Report_Data_${effectiveReportId || "snapshot"}.csv`, report.attachment_csv, "text/csv")}
+                style={{ fontSize: "12px", padding: "4px 10px", width: "auto", display: "inline-flex", alignItems: "center", gap: "5px" }}
+                title="Download flagged transactions CSV"
+              >
+                <IconDownload size={13} /> CSV
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Close"
+              style={{
+                background: "none",
+                border: "none",
+                color: "var(--muted)",
+                cursor: "pointer",
+                padding: "4px",
+                display: "flex",
+              }}
+            >
+              <IconX size={20} />
+            </button>
+          </div>
         </div>
 
         {/* Mode & Email Banner */}
@@ -154,11 +191,41 @@ export default function ApprovalDialog({
               <span style={{ fontSize: "12px", color: "var(--muted)" }}>
                 {isDryRun
                   ? "The email will be saved to outbox, not sent over network."
-                  : `Will be emailed to ${ownerEmail || "configured owner email"}.`}
+                  : `Will be emailed to ${effectiveToEmail || "configured owner email"}.`}
               </span>
             </div>
-            <div style={{ fontSize: "12px", color: "var(--faint)", display: "flex", alignItems: "center", gap: "4px" }}>
-              <IconMail size={14} /> To: <strong style={{ color: "var(--text)" }}>{ownerEmail || "Not configured"}</strong>
+            <div style={{ fontSize: "12px", color: "var(--faint)", display: "flex", alignItems: "center", gap: "6px" }}>
+              <IconMail size={14} /> To:
+              {isEditingRecipient ? (
+                <span style={{ display: "inline-flex", gap: "4px", alignItems: "center" }}>
+                  <input
+                    className="field"
+                    value={recipientEmail}
+                    onChange={(e) => setRecipientEmail(e.target.value)}
+                    style={{ padding: "3px 8px", fontSize: "12px", margin: 0, width: "220px", height: "26px" }}
+                    placeholder="email@example.com"
+                    autoFocus
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setIsEditingRecipient(false)}
+                    style={{ background: "none", border: "none", color: "var(--accent)", fontSize: "11px", cursor: "pointer", fontWeight: 600 }}
+                  >
+                    Done
+                  </button>
+                </span>
+              ) : (
+                <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                  <strong style={{ color: "var(--text)" }}>{effectiveToEmail || "Not configured"}</strong>
+                  <button
+                    type="button"
+                    onClick={() => setIsEditingRecipient(true)}
+                    style={{ background: "none", border: "none", color: "var(--accent)", fontSize: "11px", cursor: "pointer", textDecoration: "underline", padding: 0 }}
+                  >
+                    Change
+                  </button>
+                </span>
+              )}
             </div>
           </div>
 

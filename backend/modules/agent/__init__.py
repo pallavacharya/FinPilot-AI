@@ -530,7 +530,11 @@ def get_actions() -> List[Dict[str, Any]]:
     return res
 
 
-def approve_action(action_id: str, approved_by: str) -> Dict[str, Any]:
+def approve_action(
+    action_id: str,
+    approved_by: str,
+    recipient_email: Optional[str] = None,
+) -> Dict[str, Any]:
     """Approves and executes an action.
 
     Sends the stored report via emailer, marks executed only on success,
@@ -544,8 +548,13 @@ def approve_action(action_id: str, approved_by: str) -> Dict[str, Any]:
         raise ValueError(f"Action '{action_id}' is already {action.get('status')}.")
 
     settings = store.get_settings()
-    owner_email = settings.get("owner_email", "").strip()
-    if not _is_valid_email(owner_email):
+    configured_owner = settings.get("owner_email", "").strip()
+
+    if recipient_email and _is_valid_email(recipient_email.strip()):
+        owner_email = recipient_email.strip()
+    elif configured_owner and _is_valid_email(configured_owner):
+        owner_email = configured_owner
+    else:
         raise ValueError("Set the owner's email in Settings first.")
 
     report_id = action.get("report_id")
