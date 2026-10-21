@@ -5,6 +5,8 @@ import {
   getForecastNextWeek,
   getForecastChart,
   getForecastSummary,
+  uploadForecastCsv,
+  resetForecast,
 } from "../lib/api";
 
 function formatCurrency(val) {
@@ -12,7 +14,7 @@ function formatCurrency(val) {
   return "$" + Number(val).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-export default function ProductForecastTab({ initialItem }) {
+export default function ProductForecastTab({ initialItem, onForecastUpdated }) {
   const [categoriesData, setCategoriesData] = useState(null);
   const [allNextWeek, setAllNextWeek] = useState([]);
   const [summaryData, setSummaryData] = useState(null);
@@ -28,8 +30,91 @@ export default function ProductForecastTab({ initialItem }) {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(0);
 
+  // CSV upload state
+  const [showUpload, setShowUpload] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadSuccess, setUploadSuccess] = useState(null);
+  const [uploadError, setUploadError] = useState(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const csvInputRef = useRef(null);
+
   const searchContainerRef = useRef(null);
   const chartSectionRef = useRef(null);
+
+  async function handleCsvUpload(file) {
+    if (!file) return;
+    setUploading(true);
+    setUploadError(null);
+    setUploadSuccess(null);
+    try {
+      const res = await uploadForecastCsv(file);
+      const addedText = res.new_items_added > 0 ? ` and added ${res.new_items_added} new product(s)` : "";
+      setUploadSuccess(`Successfully updated ${res.items_updated} item(s)${addedText} from "${file.name}"!`);
+      const [cats, nw, summ] = await Promise.all([
+        getForecastCategories(),
+        getForecastNextWeek(),
+        getForecastSummary(),
+      ]);
+      setCategoriesData(cats);
+      setAllNextWeek(nw.items || []);
+      setSummaryData(summ);
+      if (selectedItem) {
+        getForecastChart(selectedItem).then(setChartData).catch(() => {});
+      }
+      if (onForecastUpdated) onForecastUpdated();
+    } catch (err) {
+      setUploadError(err.message || "Failed to process forecast CSV");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function handleResetForecast() {
+    setUploading(true);
+    setUploadError(null);
+    setUploadSuccess(null);
+    try {
+      await resetForecast();
+      setUploadSuccess("Forecasts reset to baseline Prophet models.");
+      const [cats, nw, summ] = await Promise.all([
+        getForecastCategories(),
+        getForecastNextWeek(),
+        getForecastSummary(),
+      ]);
+      setCategoriesData(cats);
+      setAllNextWeek(nw.items || []);
+      setSummaryData(summ);
+      if (selectedItem) {
+        getForecastChart(selectedItem).then(setChartData).catch(() => {});
+      }
+      if (onForecastUpdated) onForecastUpdated();
+    } catch (err) {
+      setUploadError(err.message || "Failed to reset forecast");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  function handleDownloadSample() {
+    const csvContent =
+      "sub_category,category,price_change_pct,stock,predicted_sales\n" +
+      "Accessories,Technology,5,250,1120.00\n" +
+      "Chairs,Furniture,-3,180,1650.00\n" +
+      "Phones,Technology,10,300,2100.00\n" +
+      "Storage,Office Supplies,0,400,950.00\n" +
+      "Binders,Office Supplies,2,350,820.00\n" +
+      "Paper,Office Supplies,-5,500,740.00\n" +
+      "Smartwatches,Technology,0,150,1280.00\n" +
+      "Ergonomic Desks,Furniture,0,80,1850.00\n";
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", "forecast_inventory_template.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
 
   // 1. Initial Load: categories, next-week items, and summary
   useEffect(() => {
@@ -202,7 +287,7 @@ export default function ProductForecastTab({ initialItem }) {
 
   return (
     <div>
-      {/* 1. Topbar */}
+      {/* 1. Topbar with Upload & Custom Status */}
       <div className="topbar">
         <div>
           <h2>Product forecast</h2>
@@ -210,10 +295,136 @@ export default function ProductForecastTab({ initialItem }) {
             {summaryData?.meta?.dataset || "Superstore sales, 2015-2018 (demo data)"} ({summaryData?.meta?.currency || "USD"})
           </div>
         </div>
-        <span className="pill">
-          <span className="dot pulse"></span>Prophet · 80% range
-        </span>
+        <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap" }}>
+          {summaryData?.is_custom && (
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <span
+                style={{
+                  fontFamily: "var(--font-mono)",
+                  fontSize: "11px",
+                  fontWeight: 700,
+                  padding: "3px 8px",
+                  borderRadius: "4px",
+                  background: "rgba(62,207,142,0.12)",
+                  color: "var(--accent)",
+                  border: "1px solid rgba(62,207,142,0.3)",
+                }}
+              >
+                ● Custom inventory active
+              </span>
+              <button
+                type="button"
+                className="btn ghost"
+                onClick={handleResetForecast}
+                disabled={uploading}
+                style={{ fontSize: "12px", padding: "4px 10px", width: "auto" }}
+                title="Revert back to original baseline Prophet forecast"
+              >
+                Reset to baseline
+              </button>
+            </div>
+          )}
+
+          <button
+            type="button"
+            className="btn primary"
+            onClick={() => setShowUpload(!showUpload)}
+            style={{ width: "auto", fontSize: "12.5px", display: "flex", alignItems: "center", gap: "6px" }}
+          >
+            <span>{showUpload ? "✕ Close Upload" : "📤 Upload updated items (CSV)"}</span>
+          </button>
+
+          <span className="pill">
+            <span className="dot pulse"></span>Prophet · 80% range
+          </span>
+        </div>
       </div>
+
+      {/* Upload Drawer / Card */}
+      {showUpload && (
+        <div
+          className="card"
+          style={{
+            marginBottom: 20,
+            background: "var(--panel-2)",
+            border: "1px solid var(--accent)",
+            animation: "fadeIn 0.2s ease-out",
+          }}
+        >
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
+            <div>
+              <h3 style={{ margin: 0, fontSize: "15px", color: "var(--text)" }}>
+                Upload Updated Item List &amp; Price Changes
+              </h3>
+              <div className="cardsub" style={{ marginBottom: 0, marginTop: 4 }}>
+                Update product pricing, stock counts, or add new items. The model will dynamically re-project next-week and 4-week forecasts.
+              </div>
+            </div>
+            <button
+              type="button"
+              className="btn ghost"
+              onClick={handleDownloadSample}
+              style={{ fontSize: "12px", padding: "4px 12px", width: "auto", color: "var(--accent)", borderColor: "var(--border)" }}
+              title="Download an example CSV template"
+            >
+              📥 Download Sample CSV
+            </button>
+          </div>
+
+          <div
+            className={`upload-zone ${isDragging ? "dragging" : ""}`}
+            style={{
+              padding: "24px 20px",
+              cursor: uploading ? "wait" : "pointer",
+              background: "var(--panel)",
+            }}
+            onDragOver={(e) => {
+              e.preventDefault();
+              if (!uploading) setIsDragging(true);
+            }}
+            onDragLeave={() => setIsDragging(false)}
+            onDrop={(e) => {
+              e.preventDefault();
+              setIsDragging(false);
+              if (uploading) return;
+              const file = e.dataTransfer?.files?.[0];
+              if (file) handleCsvUpload(file);
+            }}
+            onClick={() => !uploading && csvInputRef.current?.click()}
+          >
+            <input
+              ref={csvInputRef}
+              type="file"
+              accept=".csv,text/csv"
+              style={{ display: "none" }}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) handleCsvUpload(file);
+                e.target.value = "";
+              }}
+            />
+            <div style={{ fontSize: "28px", marginBottom: "8px" }}>📊</div>
+            <div style={{ fontSize: "13.5px", fontWeight: 600, color: "var(--text)", marginBottom: "4px" }}>
+              {uploading ? "Processing CSV & re-projecting forecast…" : "Drop updated item CSV here, or click to browse"}
+            </div>
+            <div style={{ fontSize: "11.5px", color: "var(--faint)" }}>
+              Accepts columns: <code>sub_category</code>, <code>category</code>, <code>price_change_pct</code>, <code>stock</code>, <code>predicted_sales</code>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Status banners */}
+      {uploadSuccess && (
+        <div className="upload-status success" style={{ marginBottom: 16 }}>
+          {uploadSuccess}
+        </div>
+      )}
+      {uploadError && (
+        <div className="upload-status error" style={{ marginBottom: 16 }}>
+          {uploadError}
+        </div>
+      )}
 
       {/* 2. Search Bar with Suggestions */}
       <div ref={searchContainerRef} style={{ position: "relative", marginBottom: 18 }}>

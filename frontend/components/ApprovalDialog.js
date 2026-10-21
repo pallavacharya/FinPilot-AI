@@ -81,12 +81,13 @@ export default function ApprovalDialog({
   return (
     <div className="modal-backdrop" onClick={onClose} role="dialog" aria-modal="true">
       <div
-        className="confirm-modal approval-modal"
+        className="approval-modal"
         onClick={(e) => e.stopPropagation()}
         style={{
-          maxWidth: "760px",
-          width: "92%",
-          maxHeight: "90vh",
+          maxWidth: "880px",
+          width: "92vw",
+          height: "88vh",
+          maxHeight: "860px",
           display: "flex",
           flexDirection: "column",
           padding: 0,
@@ -94,6 +95,7 @@ export default function ApprovalDialog({
           border: "1px solid var(--border)",
           borderRadius: "14px",
           overflow: "hidden",
+          boxShadow: "0 24px 60px rgba(0,0,0,0.65)",
         }}
       >
         {/* Modal Header */}
@@ -208,7 +210,7 @@ export default function ApprovalDialog({
         </div>
 
         {/* Sandboxed Iframe Preview */}
-        <div style={{ flex: 1, minHeight: "340px", maxHeight: "50vh", background: "#FFFFFF", overflow: "hidden", position: "relative" }}>
+        <div style={{ flex: 1, minHeight: 0, height: "100%", background: "#FFFFFF", overflow: "hidden", position: "relative" }}>
           {loading ? (
             <div style={{ padding: "40px", textAlign: "center", color: "#5B6475", background: "#F3F5F8", height: "100%" }}>
               Loading report snapshot preview...

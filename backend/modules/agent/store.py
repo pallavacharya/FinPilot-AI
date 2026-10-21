@@ -328,8 +328,11 @@ def get_settings() -> Dict[str, Any]:
         rows = dict(cursor.fetchall())
 
     env_owner = os.getenv("OWNER_EMAIL", "").strip()
-    stored_owner = rows.get("owner_email", "")
-    owner_email = stored_owner or env_owner
+    stored_owner = rows.get("owner_email")
+    if stored_owner is not None:
+        owner_email = stored_owner
+    else:
+        owner_email = env_owner or "sreenikhilchowdary@gmail.com"
 
     reminder_enabled = rows.get("reminder_enabled", "false").lower() == "true"
     try:

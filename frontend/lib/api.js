@@ -77,6 +77,37 @@ export async function getForecastSummary() {
   return res.json();
 }
 
+export async function uploadForecastCsv(file) {
+  const formData = new FormData();
+  formData.append("file", file);
+  const token = typeof window !== "undefined" ? localStorage.getItem("finpilot_token") : null;
+  const headers = {};
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const res = await fetch(`${API_BASE}/forecast/upload`, {
+    method: "POST",
+    headers,
+    body: formData,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to upload and update forecast CSV");
+  }
+  return res.json();
+}
+
+export async function resetForecast() {
+  const res = await fetch(`${API_BASE}/forecast/reset`, {
+    method: "POST",
+    headers: authHeaders(),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to reset forecast");
+  }
+  return res.json();
+}
+
 export async function getFlaggedTransactions() {
   const res = await fetch(`${API_BASE}/fraud`, { headers: authHeaders() });
   return res.json();

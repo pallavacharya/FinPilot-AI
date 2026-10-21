@@ -592,6 +592,19 @@ def test_14_contract_compatibility_and_history_clear():
 
 
 if __name__ == "__main__":
+    # Clean test state for predictable test suite execution
+    db_file = BASE_DIR / "data" / "finpilot.db"
+    actions_file = BASE_DIR / "data" / "agent_actions.json"
+    audit_file = BASE_DIR / "data" / "audit_log.jsonl"
+    forecast_custom = BASE_DIR / "data" / "forecast_custom.json"
+    for f in (db_file, actions_file, audit_file, forecast_custom):
+        if f.exists():
+            try:
+                f.unlink()
+            except Exception:
+                pass
+    agent._forecast_checked_once = False
+
     tests = [
         test_01_pip_check_and_dependencies,
         test_02_fraud_upload_and_agent_trigger,

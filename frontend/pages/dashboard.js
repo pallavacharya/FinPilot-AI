@@ -296,53 +296,80 @@ export default function Dashboard() {
 
             <div className="grid">
               <div className="card">
-                <h3>Top sub-categories next week</h3>
-                <div className="sub">Ranked by projected demand</div>
-                {top8Items.length === 0 ? (
-                  <div className="loading">Loading forecast data…</div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
+                  <div>
+                    <h3>Next week by sub-category</h3>
+                    <div className="cardsub" style={{ marginBottom: 0 }}>Top 8 products by predicted sales</div>
+                  </div>
+                  <span className="pill" style={{ fontSize: 10.5 }}>Superstore US$</span>
+                </div>
+
+                {nextWeekItems.length === 0 ? (
+                  <div className="loading">Loading forecast…</div>
                 ) : (
-                  <div className="bars">
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 10 }}>
                     {top8Items.map((item) => {
-                      const pct = Math.max(4, Math.round((item.predicted_sales / maxTop8) * 100));
+                      const pct = Math.max(8, Math.min(100, (item.predicted_sales / maxTop8) * 100));
                       return (
-                        <div key={item.sub_category} className="bar-row">
-                          <span className="bar-label">{item.sub_category}</span>
-                          <div className="bar-track">
-                            <div className="bar-fill" style={{ width: `${pct}%` }}></div>
+                        <div key={item.sub_category}>
+                          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12.5, marginBottom: 4 }}>
+                            <span style={{ fontWeight: 500 }}>{item.sub_category}</span>
+                            <span className="amt" style={{ color: "var(--accent)" }}>
+                              ${Number(item.predicted_sales).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </span>
                           </div>
-                          <span className="bar-val">
-                            ${Math.round(item.predicted_sales).toLocaleString("en-US")}
-                          </span>
+                          <div style={{ height: 6, background: "var(--panel-2)", borderRadius: 3, overflow: "hidden" }}>
+                            <div style={{ width: `${pct}%`, height: "100%", background: "var(--accent)", borderRadius: 3 }}></div>
+                          </div>
                         </div>
                       );
                     })}
                   </div>
                 )}
+
+                <button
+                  className="btn ghost"
+                  style={{ marginTop: 16, width: "100%", fontSize: 12.5, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
+                  onClick={() => setTab("forecast")}
+                >
+                  Open product forecast <span>→</span>
+                </button>
               </div>
 
               <div className="card">
-                <h3>Live summary</h3>
-                <div className="sub">Current system state across all modules</div>
-                <ul className="agent-highlights">
-                  <li>
-                    <strong>Forecasting:</strong> Ridge regression trained on 4 years of weekly sales.
-                  </li>
-                  <li>
-                    <strong>Fraud detector:</strong> Isolation Forest + rule heuristics; pending reviews require analyst or owner approval.
-                  </li>
-                  <li>
-                    <strong>Document store:</strong> {documents.length} document{documents.length === 1 ? "" : "s"} indexed in SQLite.
-                  </li>
-                  <li>
-                    <strong>Approval gate:</strong> Notifications and actions queued; nothing sent without human click.
-                  </li>
-                </ul>
+                <h3>System status</h3>
+                <div className="cardsub">Docker Compose · Render deployment</div>
+                <table>
+                  <tbody>
+                    <tr><td>Frontend (Next.js)</td><td style={{ textAlign: "right", color: "var(--accent)" }}>● running</td></tr>
+                    <tr><td>API gateway (FastAPI)</td><td style={{ textAlign: "right", color: "var(--accent)" }}>● running</td></tr>
+                    <tr><td>Forecasting service</td><td style={{ textAlign: "right", color: "var(--accent)" }}>● running</td></tr>
+                    <tr><td>Fraud detection service</td><td style={{ textAlign: "right", color: "var(--accent)" }}>● running</td></tr>
+                    <tr><td>RAG / ChromaDB</td><td style={{ textAlign: "right", color: "var(--accent)" }}>● running</td></tr>
+                    <tr><td>Agent layer (LangGraph)</td><td style={{ textAlign: "right", color: pendingActions > 0 ? "var(--amber)" : "var(--accent)" }}>● {pendingActions} pending</td></tr>
+                  </tbody>
+                </table>
+                <div className="badge-row">
+                  <span className="stackbadge">Next.js</span>
+                  <span className="stackbadge">FastAPI</span>
+                  <span className="stackbadge">JWT · RBAC</span>
+                  <span className="stackbadge">Docker</span>
+                  <span className="stackbadge">Render</span>
+                  <span className="stackbadge">LangGraph</span>
+                </div>
               </div>
             </div>
           </div>
         )}
 
-        {tab === "forecast" && <ProductForecastTab />}
+        {tab === "forecast" && (
+          <ProductForecastTab
+            onForecastUpdated={() => {
+              getForecastSummary().then(setSummary).catch(() => {});
+              getForecastNextWeek().then((res) => setNextWeekItems(res.items || [])).catch(() => {});
+            }}
+          />
+        )}
 
         {tab === "fraud" && (
           <FraudTab
@@ -363,15 +390,15 @@ export default function Dashboard() {
               <span className="pill">SQLite Vector + BM25</span>
             </div>
 
-            <div className="chatlayout">
-              <div className="card uploadcol">
+            <div className="doc-layout">
+              <div className="card doc-panel">
                 <h3>Indexed Documents</h3>
                 <div className="sub" style={{ marginBottom: "14px" }}>
-                  Upload PDF invoices or statements to query them with citations.
+                  Uploaded invoices and statements available for semantic retrieval.
                 </div>
 
                 <div
-                  className={`dropzone ${isDragging ? "dragging" : ""} ${uploading ? "uploading" : ""}`}
+                  className={`upload-zone ${isDragging ? "dragging" : ""}`}
                   onDragOver={(e) => {
                     e.preventDefault();
                     if (!uploading) setIsDragging(true);
@@ -381,11 +408,9 @@ export default function Dashboard() {
                     e.preventDefault();
                     setIsDragging(false);
                     if (uploading) return;
-                    const file = e.dataTransfer.files?.[0];
+                    const file = e.dataTransfer?.files?.[0];
                     if (file) handleFileUpload(file);
                   }}
-                  onClick={() => !uploading && fileInputRef.current?.click()}
-                  style={{ cursor: uploading ? "default" : "pointer" }}
                 >
                   <input
                     ref={fileInputRef}
@@ -398,43 +423,45 @@ export default function Dashboard() {
                       e.target.value = "";
                     }}
                   />
-                  <div className="dropicon">📄</div>
-                  <div className="dropprompt">
-                    {uploading ? (
-                      <span>Indexing document…</span>
-                    ) : (
-                      <>
-                        <strong>Drop a PDF here</strong> or click to browse
-                      </>
-                    )}
-                  </div>
-                  <div className="dropsub">Maximum file size 10 MB</div>
+                  <button
+                    type="button"
+                    className="btn primary"
+                    disabled={uploading}
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    {uploading ? "Indexing…" : "Upload PDF"}
+                  </button>
+                  <div className="upload-hint">Drop a PDF here or click to browse (max 10 MB)</div>
                 </div>
 
-                {uploadSuccess && <div className="banner success">{uploadSuccess}</div>}
-                {uploadError && <div className="banner error">{uploadError}</div>}
+                {uploadSuccess && <div className="upload-status success">{uploadSuccess}</div>}
+                {uploadError && <div className="upload-status error">{uploadError}</div>}
 
-                <div className="doclist">
-                  <div className="doclist-title">Currently Indexed ({documents.length})</div>
+                <div className="doc-list-wrap">
+                  <div style={{ fontSize: "11.5px", fontWeight: 600, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                    Currently Indexed ({documents.length})
+                  </div>
                   {documents.length === 0 ? (
-                    <div className="docempty">No documents uploaded yet.</div>
+                    <div className="doc-empty">
+                      Upload a PDF invoice to start asking questions.
+                    </div>
                   ) : (
-                    <div className="docitems">
-                      {documents.map((d, i) => (
-                        <div key={i} className="docitem">
-                          <span className="docname" title={d.filename}>
-                            {d.filename}
-                          </span>
-                          <span className="docmeta">
-                            {d.chunks} chunk{d.chunks === 1 ? "" : "s"}
-                          </span>
+                    <div className="doc-list">
+                      {documents.map((d) => (
+                        <div key={d.filename} className="doc-item">
+                          <span className="doc-badge">PDF</span>
+                          <div className="doc-meta">
+                            <div className="doc-name" title={d.filename}>{d.filename}</div>
+                            <div className="doc-sub">
+                              {d.pages} {d.pages === 1 ? "page" : "pages"} · {d.chunks} {d.chunks === 1 ? "chunk" : "chunks"}
+                            </div>
+                          </div>
                           <button
                             type="button"
-                            className="docdelete-btn"
+                            className="doc-del-btn"
+                            title={`Remove ${d.filename}`}
                             disabled={deletingFile === d.filename}
                             onClick={() => handleDeleteDocument(d.filename)}
-                            title={`Remove ${d.filename}`}
-                            aria-label={`Remove ${d.filename}`}
                           >
                             {deletingFile === d.filename ? "…" : "✕"}
                           </button>

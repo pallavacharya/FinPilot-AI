@@ -116,8 +116,8 @@ tr:last-child td{border-bottom:none;}
 .badge-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;}
 .stackbadge{font-family:var(--font-mono);font-size:10.5px;color:var(--muted);border:1px solid var(--border);padding:4px 9px;border-radius:6px;}
 
-.chatwrap{display:flex;flex-direction:column;height:calc(100vh - 135px);min-height:560px;}
-.chatlog{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:14px;padding:4px 2px 10px;}
+.chatwrap{display:flex;flex-direction:column;height:calc(100vh - 180px);min-height:560px;}
+.chatlog{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:14px;padding:4px 2px 10px;}
 .msg{max-width:82%;font-size:13px;line-height:1.55;padding:11px 14px;border-radius:12px;white-space:pre-wrap;word-break:break-word;}
 .msg.user{align-self:flex-end;background:var(--accent);color:#08120D;border-bottom-right-radius:4px;font-weight:500;}
 .msg.bot{align-self:flex-start;background:var(--panel-2);border:1px solid var(--border);border-bottom-left-radius:4px;}
@@ -143,9 +143,10 @@ tr:last-child td{border-bottom:none;}
 .loading{color:var(--faint);font-size:12.5px;padding:10px 0;}
 
 /* Document Q&A layout & components */
-.doc-layout{display:grid;grid-template-columns:320px 1fr;gap:16px;align-items:start;}
+.doc-layout{display:grid;grid-template-columns:320px 1fr;gap:16px;align-items:stretch;}
 @media (max-width:940px){ .doc-layout{grid-template-columns:1fr;} }
-.doc-panel{display:flex;flex-direction:column;gap:12px;}
+.doc-panel{display:flex;flex-direction:column;gap:12px;align-self:flex-start;max-height:calc(100vh - 170px);overflow-y:auto;}
+@media (max-width:940px){ .doc-panel{max-height:none;} }
 .upload-zone{border:1px dashed var(--border);border-radius:10px;padding:16px 14px;text-align:center;background:var(--panel-2);transition:border-color .15s, background-color .15s;}
 .upload-zone.dragging{border-color:var(--accent);background:rgba(62,207,142,.06);}
 .upload-hint{font-size:11px;color:var(--faint);margin-top:8px;}
@@ -256,6 +257,8 @@ tr:last-child td{border-bottom:none;}
 /* Modal & Empty State */
 .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:1000;padding:20px;}
 .confirm-modal{width:100%;max-width:440px;padding:24px;box-shadow:0 10px 30px rgba(0,0,0,0.5);}
+.approval-modal{width:92vw;max-width:880px;height:88vh;max-height:860px;display:flex;flex-direction:column;padding:0;border-radius:14px;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,0.65);}
+@media (max-width:640px){.approval-modal{width:96vw;height:94vh;}}
 .danger-btn{background:var(--red);border:1px solid var(--red);color:#fff;}
 .danger-btn:hover{opacity:.9;}
 .fraud-empty-card{text-align:center;padding:48px 20px;}

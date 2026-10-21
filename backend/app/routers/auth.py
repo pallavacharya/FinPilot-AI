@@ -6,6 +6,7 @@ router = APIRouter()
 
 # Demo user store — replace with a real DB + hashed passwords (passlib/bcrypt) before production.
 DEMO_USERS = {
+    "sreenikhilchowdary@gmail.com": {"password": "demo1234", "role": "owner", "name": "Sreenikhil Chowdary"},
     "owner@aaravretail.com": {"password": "demo1234", "role": "owner", "name": "Priya Nair"},
     "analyst@aaravretail.com": {"password": "demo1234", "role": "analyst", "name": "Dev Menon"},
 }

@@ -25,7 +25,10 @@ export default function Login() {
   }
 
   function quickFill(role) {
-    if (role === "owner") {
+    if (role === "sreenikhil") {
+      setEmail("sreenikhilchowdary@gmail.com");
+      setPassword("demo1234");
+    } else if (role === "owner") {
       setEmail("owner@aaravretail.com");
       setPassword("demo1234");
     } else {
@@ -68,6 +71,10 @@ export default function Login() {
         <div className="demo-hint">
           Demo accounts — click to fill:
           <br />
+          <span style={{ cursor: "pointer" }} onClick={() => quickFill("sreenikhil")}>
+            <code>sreenikhilchowdary@gmail.com</code> (Owner, live email test)
+          </span>
+          <br />
           <span style={{ cursor: "pointer" }} onClick={() => quickFill("owner")}>
             <code>owner@aaravretail.com</code> (Owner, full access)
           </span>
@@ -76,7 +83,7 @@ export default function Login() {
             <code>analyst@aaravretail.com</code> (Analyst, review + approve)
           </span>
           <br />
-          password for both: <code>demo1234</code>
+          password for all: <code>demo1234</code>
         </div>
       </div>
     </div>
