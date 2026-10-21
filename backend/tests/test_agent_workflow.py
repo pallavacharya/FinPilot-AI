@@ -593,6 +593,9 @@ def test_14_contract_compatibility_and_history_clear():
 
 if __name__ == "__main__":
     # Clean test state for predictable test suite execution
+    from modules.forecasting import reset_custom_forecast
+    reset_custom_forecast()
+
     db_file = BASE_DIR / "data" / "finpilot.db"
     actions_file = BASE_DIR / "data" / "agent_actions.json"
     audit_file = BASE_DIR / "data" / "audit_log.jsonl"

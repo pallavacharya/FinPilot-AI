@@ -14,7 +14,7 @@ function formatCurrency(val) {
   return "$" + Number(val).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-export default function ProductForecastTab({ initialItem, onForecastUpdated }) {
+export default function ProductForecastTab({ initialItem, onForecastUpdated, onOpenApproval }) {
   const [categoriesData, setCategoriesData] = useState(null);
   const [allNextWeek, setAllNextWeek] = useState([]);
   const [summaryData, setSummaryData] = useState(null);
@@ -35,6 +35,7 @@ export default function ProductForecastTab({ initialItem, onForecastUpdated }) {
   const [uploading, setUploading] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(null);
   const [uploadError, setUploadError] = useState(null);
+  const [generatedAction, setGeneratedAction] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
   const csvInputRef = useRef(null);
 
@@ -46,10 +47,14 @@ export default function ProductForecastTab({ initialItem, onForecastUpdated }) {
     setUploading(true);
     setUploadError(null);
     setUploadSuccess(null);
+    setGeneratedAction(null);
     try {
       const res = await uploadForecastCsv(file);
       const addedText = res.new_items_added > 0 ? ` and added ${res.new_items_added} new product(s)` : "";
       setUploadSuccess(`Successfully updated ${res.items_updated} item(s)${addedText} from "${file.name}"!`);
+      if (res.action) {
+        setGeneratedAction(res.action);
+      }
       const [cats, nw, summ] = await Promise.all([
         getForecastCategories(),
         getForecastNextWeek(),
@@ -416,8 +421,39 @@ export default function ProductForecastTab({ initialItem, onForecastUpdated }) {
 
       {/* Status banners */}
       {uploadSuccess && (
-        <div className="upload-status success" style={{ marginBottom: 16 }}>
-          {uploadSuccess}
+        <div
+          className="upload-status success"
+          style={{
+            marginBottom: 16,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            flexWrap: "wrap",
+            gap: "10px",
+            padding: "12px 16px",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <span>{uploadSuccess}</span>
+          </div>
+          {generatedAction && (
+            <button
+              type="button"
+              className="btn primary"
+              onClick={() => onOpenApproval && onOpenApproval(generatedAction)}
+              style={{
+                padding: "6px 14px",
+                fontSize: "12.5px",
+                width: "auto",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                boxShadow: "0 2px 8px rgba(62,207,142,0.25)",
+              }}
+            >
+              <span>Review &amp; Email Report &rarr;</span>
+            </button>
+          )}
         </div>
       )}
       {uploadError && (

@@ -794,3 +794,70 @@ def generate_report(kind: str, scope: str = "newest", batch_id: Optional[int] = 
 
     else:
         raise ValueError(f"Unknown report kind: '{kind}'. Expected 'fraud' or 'sales'.")
+
+
+def on_sales_forecast_upload(
+    filename: str,
+    items_updated: int,
+    new_items_added: int,
+    summary: Dict[str, Any],
+) -> Dict[str, Any]:
+    """Triggered whenever a user uploads updated sales data via CSV.
+
+    Compiles an updated Sales Outlook report snapshot, creates a pending approval
+    action for email dispatch, records a notification for the owner, and logs audit events.
+    """
+    report_dict = reports.build_sales_report()
+    saved_report = store.save_report(report_dict)
+
+    action_id = uuid.uuid4().hex[:6]
+    week_ending = summary.get("week_ending", "upcoming week")
+    next_week_total = float(summary.get("next_week_total", 0.0))
+    added_str = f" and {new_items_added} new product(s) added" if new_items_added > 0 else ""
+
+    action = {
+        "id": action_id,
+        "type": "sales_report",
+        "report_id": saved_report["id"],
+        "title": f"Sales outlook report: {filename} ({week_ending})",
+        "body": (
+            f"Updated inventory data received ({items_updated} items updated{added_str}). "
+            f"Projected next-week sales: ${next_week_total:,.2f}. "
+            "Awaiting approval to dispatch email report to owner."
+        ),
+        "status": "pending_approval",
+        "created_at": _now_iso(),
+        "metadata": {
+            "filename": filename,
+            "items_updated": items_updated,
+            "new_items_added": new_items_added,
+            "next_week_total": next_week_total,
+        },
+    }
+    saved_action = store.save_action(action)
+
+    store.create_notification(
+        notif_type="sales_forecast",
+        title=f"Sales data uploaded ({filename})",
+        message=f"Forecast updated for week ending {week_ending} (${next_week_total:,.2f}). Action #{action_id} awaiting approval to email report.",
+        action_id=saved_action["id"],
+        report_id=saved_report["id"],
+    )
+
+    store.write_audit_entry(
+        event="sales_forecast_uploaded",
+        actor="agent",
+        action_id=saved_action["id"],
+        report_id=saved_report["id"],
+        details={
+            "filename": filename,
+            "next_week_total": next_week_total,
+            "items_updated": items_updated,
+            "new_items_added": new_items_added,
+        },
+    )
+
+    return {
+        "report": saved_report,
+        "action": saved_action,
+    }

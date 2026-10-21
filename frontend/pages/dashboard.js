@@ -367,6 +367,10 @@ export default function Dashboard() {
             onForecastUpdated={() => {
               getForecastSummary().then(setSummary).catch(() => {});
               getForecastNextWeek().then((res) => setNextWeekItems(res.items || [])).catch(() => {});
+              refreshUnread();
+            }}
+            onOpenApproval={(action) => {
+              setActiveApprovalAction(action);
             }}
           />
         )}

@@ -277,7 +277,7 @@ export default function ApprovalDialog({
         </div>
 
         {/* Sandboxed Iframe Preview */}
-        <div style={{ flex: 1, minHeight: 0, height: "100%", background: "#FFFFFF", overflow: "hidden", position: "relative" }}>
+        <div style={{ flex: 1, minHeight: 0, height: "100%", background: "#F3F5F8", overflow: "hidden", position: "relative" }}>
           {loading ? (
             <div style={{ padding: "40px", textAlign: "center", color: "#5B6475", background: "#F3F5F8", height: "100%" }}>
               Loading report snapshot preview...
@@ -288,6 +288,9 @@ export default function ApprovalDialog({
               srcDoc={report.html}
               sandbox=""
               style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
                 width: "100%",
                 height: "100%",
                 border: "none",

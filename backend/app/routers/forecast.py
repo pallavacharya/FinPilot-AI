@@ -63,16 +63,34 @@ async def upload_forecast_csv(
         raise HTTPException(status_code=400, detail="Only CSV files (.csv) are supported.")
     try:
         content_bytes = await file.read()
-        text = content_bytes.decode("utf-8-sig")  # handle UTF-8 with BOM if from Excel
-        res = apply_forecast_csv(text, filename=file.filename)
-        return res
-    except UnicodeDecodeError:
         try:
+            text = content_bytes.decode("utf-8-sig")  # handle UTF-8 with BOM if from Excel
+        except UnicodeDecodeError:
             text = content_bytes.decode("latin-1")
-            res = apply_forecast_csv(text, filename=file.filename)
-            return res
-        except Exception as e:
-            raise HTTPException(status_code=400, detail=f"Failed to read CSV encoding: {e}")
+
+        res = apply_forecast_csv(text, filename=file.filename)
+
+        # Trigger LangGraph Agent to generate updated Sales Outlook report, approval action, and notification
+        action = None
+        report = None
+        try:
+            from modules.agent import on_sales_forecast_upload
+            agent_res = on_sales_forecast_upload(
+                filename=file.filename,
+                items_updated=res["items_updated"],
+                new_items_added=res["new_items_added"],
+                summary=res["summary"],
+            )
+            action = agent_res.get("action")
+            report = agent_res.get("report")
+        except Exception:
+            pass
+
+        return {
+            **res,
+            "action": action,
+            "report": report,
+        }
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:

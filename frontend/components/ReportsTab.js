@@ -342,12 +342,13 @@ export default function ReportsTab({ onOpenApproval }) {
       {previewReport && (
         <div className="modal-backdrop" onClick={() => setPreviewReport(null)} role="dialog" aria-modal="true">
           <div
-            className="confirm-modal"
+            className="approval-modal"
             onClick={(e) => e.stopPropagation()}
             style={{
-              maxWidth: "800px",
-              width: "94%",
-              maxHeight: "92vh",
+              maxWidth: "880px",
+              width: "92vw",
+              height: "88vh",
+              maxHeight: "860px",
               display: "flex",
               flexDirection: "column",
               padding: 0,
@@ -355,6 +356,7 @@ export default function ReportsTab({ onOpenApproval }) {
               border: "1px solid var(--border)",
               borderRadius: "14px",
               overflow: "hidden",
+              boxShadow: "0 24px 60px rgba(0,0,0,0.65)",
             }}
           >
             {/* Modal Header */}
@@ -426,7 +428,7 @@ export default function ReportsTab({ onOpenApproval }) {
             </div>
 
             {/* Modal Iframe Content */}
-            <div style={{ flex: 1, minHeight: "450px", maxHeight: "65vh", background: "#FFFFFF", position: "relative" }}>
+            <div style={{ flex: 1, minHeight: 0, height: "100%", background: "#F3F5F8", position: "relative", overflow: "hidden" }}>
               {previewLoading ? (
                 <div style={{ padding: "40px", textAlign: "center", color: "#5B6475", background: "#F3F5F8", height: "100%" }}>
                   Loading full report...
@@ -437,6 +439,9 @@ export default function ReportsTab({ onOpenApproval }) {
                   srcDoc={previewReport.html}
                   sandbox=""
                   style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
                     width: "100%",
                     height: "100%",
                     border: "none",
