@@ -46,12 +46,15 @@ Open http://localhost:3000 — API docs at http://127.0.0.1:8000/docs
 
 ## Module Integration Status
 
+## Module Integration Status
+
 | Module | Owner | Status | Backend Location | Details |
 |---|---|---|---|---|
-| **Sales Forecasting** | **G Yaswanth Sai** | **COMPLETE** | `backend/modules/forecasting/` | 17 Prophet models trained & backtested (RMSE 1,708, WAPE 70.4%). Fixed-seed precomputed bundle (`forecast_bundle.json`) with zero extra runtime dependencies. Full API (`/categories`, `/next-week`, `/predict`, `/chart`, `/summary`) & Next.js "Product forecast" tab integrated. |
-| Fraud detection | Kritagy Kaushik | Awaiting deliverable | `backend/modules/fraud/__init__.py` | Stubbed with sample data; awaiting Isolation Forest + XGBoost classifier on Kaggle fraud dataset. |
-| RAG / documents | Pallav Acharya | Awaiting deliverable | `backend/modules/documents/__init__.py` | Stubbed with sample data; awaiting document chunking, embeddings, ChromaDB, and Claude API retrieval. |
-| AI agent | Akshi Yadav | Awaiting deliverable | `backend/modules/agent/__init__.py` | Stubbed with sample data; awaiting LangGraph decision loop, action tools, and human approval flow. |
+| Sales Forecasting | G Yaswanth Sai | COMPLETE | `backend/modules/forecasting/` | 17 Prophet models trained and backtested. RMSE: 1,708; WAPE: 70.4%. Forecasting APIs and Next.js Product Forecast tab integrated. |
+| Fraud Detection | Kritagy Kaushik | COMPLETE | `backend/modules/fraud/__init__.py` | Isolation Forest-based anomaly detection combined with rule-based risk scoring. Supports transaction analysis, suspicious transaction identification, and review queue generation. |
+| RAG / Document Q&A | Pallav Acharya | COMPLETE | `backend/modules/documents/__init__.py` | PDF text extraction, overlapping text chunking, TF-IDF-based retrieval, ChromaDB storage, and Gemini-powered question answering. Evaluated with 25 test cases: 25/25 passed (100% source retrieval evaluation). |
+| AI Agent | Akshi Yadav | COMPLETE | `backend/modules/agent/__init__.py` | LangGraph-based workflow orchestration, fraud analysis, report generation, notifications, human approval/rejection, and audit logging. |
+
 
 See `TEAM_INTEGRATION_GUIDE.docx` for the full per-person instructions.
 
